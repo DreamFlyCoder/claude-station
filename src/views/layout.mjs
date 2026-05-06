@@ -321,10 +321,10 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       background: var(--bg-input);
       border: 1px solid var(--border-input);
       color: var(--fg);
-      padding: 6px 10px;
-      border-radius: 6px;
+      padding: 9px 12px;
+      border-radius: 8px;
       font-family: inherit;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       outline: none;
       transition: border-color 0.15s;
     }
@@ -746,17 +746,17 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 14px;
+      padding: 12px 14px;
       box-shadow: var(--shadow-sm);
       display: flex;
       flex-direction: column;
     }
     .hero-block.hero-stats { min-height: 0; }
-    .hero-block.hero-activity { min-height: 200px; }
+    .hero-block.hero-activity { min-height: 0; }
     .hero-block h3 {
       color: var(--accent);
       font-size: 0.78rem;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       font-weight: 600;
       letter-spacing: 0.02em;
     }
@@ -775,12 +775,12 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       min-height: 0;
     }
     .stats-grid .stat-box .num {
-      font-size: 1.25rem;
+      font-size: 1.6rem;
       line-height: 1.1;
       margin-bottom: 2px;
     }
     .stats-grid .stat-box .label {
-      font-size: 0.65rem;
+      font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
@@ -812,7 +812,6 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       display: flex;
       align-items: center;
       gap: 8px;
-      height: 88px;
       margin-bottom: 12px;
     }
     .top-search input {
@@ -820,22 +819,27 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       background: var(--bg-input);
       border: 1px solid var(--border-input);
       color: var(--fg);
-      padding: 7px 12px;
-      border-radius: 6px;
+      padding: 11px 16px;
+      border-radius: 8px;
       font-family: inherit;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       outline: none;
+      transition: border-color 200ms cubic-bezier(0.4,0,0.2,1), box-shadow 200ms;
     }
-    .top-search input:focus { border-color: var(--accent); }
+    .top-search input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(201, 160, 255, 0.15);
+    }
     .top-search button {
       background: var(--bg-card);
       border: 1px solid var(--border);
       color: var(--fg);
-      padding: 7px 14px;
-      border-radius: 6px;
+      padding: 11px 18px;
+      border-radius: 8px;
       font-family: inherit;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       cursor: pointer;
+      transition: all 200ms cubic-bezier(0.4,0,0.2,1);
     }
     .top-search button:hover { border-color: var(--accent); color: var(--accent); }
 
@@ -857,13 +861,13 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 16px;
+      padding: 12px 14px;
       box-shadow: var(--shadow-sm);
-      min-height: 240px;
+      min-height: 0;
       display: flex;
       flex-direction: column;
     }
-    .dash-card h3 { margin-bottom: 10px; font-size: 0.95rem; }
+    .dash-card h3 { margin-bottom: 8px; font-size: 0.85rem; color: var(--accent); font-weight: 600; letter-spacing: 0.02em; }
     .dash-card .chart-body { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
 
     .heatmap { display: block; }
