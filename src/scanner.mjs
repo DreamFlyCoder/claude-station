@@ -1,4 +1,4 @@
-import { readdir, stat, readFile, access, mkdir, rename, copyFile, writeFile } from 'node:fs/promises';
+import { readdir, stat, readFile, access, mkdir, rename, copyFile, writeFile, unlink } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { homedir } from 'node:os';
@@ -169,6 +169,30 @@ export async function getProjects() {
  * Get all sessions for a project.
  * Returns [{id, firstPrompt, messageCount, startTime, fileSize}]
  */
+export async function readSessionMeta(filePath) {
+  let firstPrompt = '';
+  let startTime = null;
+  let messageCount = 0;
+  const rl = createInterface({
+    input: createReadStream(filePath, { encoding: 'utf-8' }),
+    crlfDelay: Infinity,
+  });
+  for await (const line of rl) {
+    if (!line.trim()) continue;
+    let obj;
+    try { obj = JSON.parse(line); } catch { continue; }
+    if (!startTime && obj.timestamp) startTime = obj.timestamp;
+    if (obj.type === 'user' || obj.type === 'assistant') {
+      messageCount++;
+      if (!firstPrompt && obj.type === 'user') {
+        const content = extractTextContent(obj.message?.content);
+        if (content && !content.startsWith('<')) firstPrompt = content.slice(0, 80);
+      }
+    }
+  }
+  return { firstPrompt: firstPrompt || '(no prompt)', startTime, messageCount };
+}
+
 export async function getSessions(escapedPath) {
   const projectDir = join(PROJECTS_DIR, escapedPath);
   let files;
@@ -190,35 +214,10 @@ export async function getSessions(escapedPath) {
     let messageCount = 0;
 
     try {
-      const rl = createInterface({
-        input: createReadStream(filePath, { encoding: 'utf-8' }),
-        crlfDelay: Infinity,
-      });
-
-      for await (const line of rl) {
-        if (!line.trim()) continue;
-        let obj;
-        try {
-          obj = JSON.parse(line);
-        } catch { continue; }
-
-        // Capture earliest non-null timestamp
-        if (!startTime && obj.timestamp) {
-          startTime = obj.timestamp;
-        }
-
-        if (obj.type === 'user' || obj.type === 'assistant') {
-          messageCount++;
-
-          // Capture first user prompt
-          if (!firstPrompt && obj.type === 'user') {
-            const content = extractTextContent(obj.message?.content);
-            if (content && !content.startsWith('<')) {
-              firstPrompt = content.slice(0, 80);
-            }
-          }
-        }
-      }
+      const meta = await readSessionMeta(filePath);
+      firstPrompt = meta.firstPrompt;
+      startTime = meta.startTime;
+      messageCount = meta.messageCount;
 
       const s = await stat(filePath);
 
@@ -536,6 +535,97 @@ export async function archiveSession(escapedPath, sessionId) {
   const dest = join(destDir, `${sessionId}.jsonl`);
   await rename(srcResolved, dest);
   return { archivedPath: dest };
+}
+
+/**
+ * List all archived sessions, grouped by escapedPath.
+ * Returns [{ escapedPath, realPath, sessions: [{id, archivedAt, fileSize, firstPrompt, messageCount}] }].
+ */
+export async function getArchivedSessions() {
+  let projects;
+  try {
+    projects = await readdir(ARCHIVE_DIR, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  const out = [];
+  for (const p of projects) {
+    if (!p.isDirectory()) continue;
+    const escapedPath = p.name;
+    const dir = join(ARCHIVE_DIR, escapedPath);
+    let files;
+    try { files = (await readdir(dir)).filter(f => f.endsWith('.jsonl')); }
+    catch { continue; }
+    if (files.length === 0) continue;
+
+    const sessions = [];
+    for (const f of files) {
+      const id = f.replace(/\.jsonl$/, '');
+      const filePath = join(dir, f);
+      let st;
+      try { st = await stat(filePath); } catch { continue; }
+      const meta = await readSessionMeta(filePath).catch(() => ({ firstPrompt: '', messageCount: 0 }));
+      sessions.push({
+        id,
+        archivedAt: st.mtime.toISOString(),
+        fileSize: st.size,
+        firstPrompt: meta.firstPrompt,
+        messageCount: meta.messageCount,
+      });
+    }
+    sessions.sort((a, b) => (a.archivedAt < b.archivedAt ? 1 : -1));
+
+    // try to recover real path: archived jsonl still has cwd field
+    let realPath = null;
+    for (const f of files) {
+      realPath = await extractCwdFromJsonl(join(dir, f));
+      if (realPath) break;
+    }
+    if (!realPath) realPath = '/' + escapedToRealPath(escapedPath);
+
+    out.push({ escapedPath, realPath, sessions });
+  }
+  return out;
+}
+
+/**
+ * Move an archived session back to active projects dir.
+ */
+export async function restoreSession(escapedPath, sessionId) {
+  if (escapedPath.includes('/') || escapedPath.includes('..') || escapedPath.startsWith('.')) {
+    throw new Error('invalid escapedPath');
+  }
+  if (!/^[a-zA-Z0-9-]+$/.test(sessionId)) {
+    throw new Error('invalid sessionId');
+  }
+  const src = resolve(join(ARCHIVE_DIR, escapedPath, `${sessionId}.jsonl`));
+  if (!src.startsWith(resolve(ARCHIVE_DIR) + sep)) {
+    throw new Error('path outside archive dir');
+  }
+  await access(src);
+  const destDir = join(PROJECTS_DIR, escapedPath);
+  await mkdir(destDir, { recursive: true });
+  const dest = join(destDir, `${sessionId}.jsonl`);
+  await rename(src, dest);
+  return { restoredPath: dest };
+}
+
+/**
+ * Permanently delete an archived session jsonl. Only allowed under ARCHIVE_DIR.
+ */
+export async function permanentlyDeleteSession(escapedPath, sessionId) {
+  if (escapedPath.includes('/') || escapedPath.includes('..') || escapedPath.startsWith('.')) {
+    throw new Error('invalid escapedPath');
+  }
+  if (!/^[a-zA-Z0-9-]+$/.test(sessionId)) {
+    throw new Error('invalid sessionId');
+  }
+  const target = resolve(join(ARCHIVE_DIR, escapedPath, `${sessionId}.jsonl`));
+  if (!target.startsWith(resolve(ARCHIVE_DIR) + sep)) {
+    throw new Error('refuse to delete: target outside archive dir');
+  }
+  await unlink(target);
+  return { deleted: target };
 }
 
 // ---------- CLAUDE.md write ----------

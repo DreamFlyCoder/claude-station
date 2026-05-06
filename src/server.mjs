@@ -5,9 +5,11 @@ import { renderProject } from './views/project.mjs';
 import { renderSession } from './views/session.mjs';
 import { renderSearch } from './views/search.mjs';
 import { renderConfig } from './views/config.mjs';
+import { renderArchive } from './views/archive.mjs';
 import {
   getSessionMessages, getRealPath,
   archiveSession, saveClaudeMd,
+  restoreSession, permanentlyDeleteSession,
 } from './scanner.mjs';
 
 function sendHtml(res, html, status = 200) {
@@ -96,6 +98,38 @@ export function startServer(port, callback) {
       if (method === 'GET' && path === '/config') {
         const html = await renderConfig();
         return sendHtml(res, html);
+      }
+
+      // GET /archive
+      if (method === 'GET' && path === '/archive') {
+        const html = await renderArchive();
+        return sendHtml(res, html);
+      }
+
+      // POST /api/session/archive/:escapedPath/:id/restore
+      const restoreMatch = path.match(/^\/api\/session\/archive\/([^/]+)\/([^/]+)\/restore$/);
+      if (restoreMatch && method === 'POST') {
+        const escapedPath = decodeURIComponent(restoreMatch[1]);
+        const sessionId = restoreMatch[2];
+        try {
+          const out = await restoreSession(escapedPath, sessionId);
+          return sendJson(res, { ok: true, ...out });
+        } catch (e) {
+          return sendJson(res, { ok: false, error: e.message }, 403);
+        }
+      }
+
+      // POST /api/session/archive/:escapedPath/:id/delete-forever
+      const deleteForeverMatch = path.match(/^\/api\/session\/archive\/([^/]+)\/([^/]+)\/delete-forever$/);
+      if (deleteForeverMatch && method === 'POST') {
+        const escapedPath = decodeURIComponent(deleteForeverMatch[1]);
+        const sessionId = deleteForeverMatch[2];
+        try {
+          const out = await permanentlyDeleteSession(escapedPath, sessionId);
+          return sendJson(res, { ok: true, ...out });
+        } catch (e) {
+          return sendJson(res, { ok: false, error: e.message }, 403);
+        }
       }
 
       // POST /api/session/:escapedPath/:id/archive

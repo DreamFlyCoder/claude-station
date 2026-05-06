@@ -36,7 +36,7 @@ function shortName(realPath) {
   return b || realPath;
 }
 
-function renderSidebar(projects, activeEscapedPath, isHome, isConfig) {
+function renderSidebar(projects, activeEscapedPath, isHome, isConfig, isArchive) {
   const items = projects.map(p => {
     const isActive = p.escapedPath === activeEscapedPath;
     const name = shortName(p.realPath);
@@ -60,6 +60,7 @@ function renderSidebar(projects, activeEscapedPath, isHome, isConfig) {
     <div class="sb-footer">
       <a class="sb-global${isHome ? ' active' : ''}" href="/">🌐 Global CLAUDE.md</a>
       <a class="sb-global${isConfig ? ' active' : ''}" href="/config">⚙️ Config Center</a>
+      <a class="sb-global${isArchive ? ' active' : ''}" href="/archive">🗂 Archive (deleted)</a>
     </div>
   </div>`;
 }
@@ -73,7 +74,7 @@ function renderSidebar(projects, activeEscapedPath, isHome, isConfig) {
  * @param {boolean} [opts.isHome] — true when rendering the home page
  * @param {boolean} [opts.isConfig] — true when rendering the config center
  */
-export async function layout(title, content, { breadcrumbs = [], activeEscapedPath = null, isHome = false, isConfig = false } = {}) {
+export async function layout(title, content, { breadcrumbs = [], activeEscapedPath = null, isHome = false, isConfig = false, isArchive = false } = {}) {
   const marked = await getMarkedJs();
   const projects = await getProjects();
 
@@ -85,7 +86,7 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       ).join('')}</nav>`
     : '';
 
-  const sidebarHtml = renderSidebar(projects, activeEscapedPath, isHome, isConfig);
+  const sidebarHtml = renderSidebar(projects, activeEscapedPath, isHome, isConfig, isArchive);
 
   return `<!DOCTYPE html>
 <html lang="en" data-theme="dark">
@@ -992,6 +993,26 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       box-shadow: var(--shadow-sm);
     }
     .btn-archive:active { transform: translateY(0); }
+
+    /* Restore + Delete Forever buttons (Archive page) */
+    .btn-restore, .btn-delete-forever {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-restore { color: #66bb6a; border-color: rgba(102, 187, 106, 0.4); }
+    .btn-restore:hover { background: rgba(102, 187, 106, 0.12); border-color: #66bb6a; transform: translateY(-1px); }
+    .btn-delete-forever { color: #ef5350; border-color: rgba(239, 83, 80, 0.4); }
+    .btn-delete-forever:hover { background: rgba(239, 83, 80, 0.12); border-color: #ef5350; transform: translateY(-1px); }
+    .btn-restore:active, .btn-delete-forever:active { transform: translateY(0); }
+    .archive-card { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .archive-card .card-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .archive-card .muted { color: var(--fg-faint); font-size: 0.75rem; font-weight: normal; }
     .btn-export {
       background: transparent;
       color: var(--fg-muted);
@@ -1184,24 +1205,44 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       });
     })();
 
-    // Archive button
-    document.querySelectorAll('.btn-archive').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!confirm('Archive this session? The jsonl file will be moved to ~/.claude/projects/.archive/. You can restore it manually.')) return;
-        const url = btn.dataset.url;
-        btn.disabled = true;
-        try {
-          const res = await fetch(url, { method: 'POST' });
-          const data = await res.json();
-          if (!res.ok || !data.ok) throw new Error(data.error || 'archive failed');
-          window.toast('Archived');
-          const redirect = btn.dataset.redirect;
-          setTimeout(() => { if (redirect) location.replace(redirect); else location.reload(); }, 500);
-        } catch (e) {
-          window.toast('Archive failed: ' + e.message, { error: true, duration: 3000 });
-          btn.disabled = false;
-        }
+    // Helper for buttons that POST to an URL and redirect/reload on success
+    function bindActionButton(selector, opts) {
+      document.querySelectorAll(selector).forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault(); e.stopPropagation();
+          if (opts.confirm && !confirm(opts.confirm)) return;
+          const url = btn.dataset.url;
+          btn.disabled = true;
+          try {
+            const res = await fetch(url, { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok || !data.ok) throw new Error(data.error || opts.successMsg + ' failed');
+            window.toast(opts.successMsg);
+            const redirect = btn.dataset.redirect;
+            setTimeout(() => { if (redirect) location.replace(redirect); else location.reload(); }, 500);
+          } catch (err) {
+            window.toast(opts.successMsg + ' failed: ' + err.message, { error: true, duration: 3000 });
+            btn.disabled = false;
+          }
+        });
       });
+    }
+
+    // Delete (move to .archive)
+    bindActionButton('.btn-archive', {
+      confirm: 'Delete this session? It will be moved to ~/.claude/projects/.archive/ where you can restore or permanently delete it later.',
+      successMsg: 'Deleted',
+    });
+
+    // Restore (move back from .archive)
+    bindActionButton('.btn-restore', {
+      successMsg: 'Restored',
+    });
+
+    // Delete forever (irreversible unlink)
+    bindActionButton('.btn-delete-forever', {
+      confirm: '⚠️ Permanently delete this session? This CANNOT be undone — the jsonl file will be removed from disk.',
+      successMsg: 'Permanently deleted',
     });
 
     // CLAUDE.md editor (multiple instances supported)
