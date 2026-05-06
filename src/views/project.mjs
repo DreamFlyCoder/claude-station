@@ -19,7 +19,7 @@ function formatTime(ts) {
   });
 }
 
-const RESUME_TIP = '复制到终端打开继续此 claude code 对话';
+const RESUME_TIP = 'Copy to terminal to open and continue this claude code conversation';
 
 export async function renderProject(escapedPath) {
   const realPath = await getRealPath(escapedPath);

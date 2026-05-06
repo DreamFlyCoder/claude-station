@@ -578,7 +578,7 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
         const cmd = btn.dataset.cmd;
         navigator.clipboard.writeText(cmd).then(() => {
           const original = btn.textContent;
-          btn.textContent = '✓ 已复制';
+          btn.textContent = '✓ Copied';
           btn.classList.add('copied');
           setTimeout(() => {
             btn.textContent = original;

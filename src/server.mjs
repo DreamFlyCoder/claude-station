@@ -75,6 +75,31 @@ export function startServer(port, callback) {
     }
   });
 
-  server.listen(port, callback);
+  // Try the requested port; if busy, walk forward until we find a free one (max 20 tries).
+  const MAX_TRIES = 20;
+  let tries = 0;
+  let started = false;
+
+  function tryListen(p) {
+    tries++;
+    server.removeAllListeners('error');
+    server.removeAllListeners('listening');
+    server.once('error', (err) => {
+      if (err.code === 'EADDRINUSE' && tries < MAX_TRIES) {
+        console.warn(`port ${p} in use, trying ${p + 1}...`);
+        setImmediate(() => tryListen(p + 1));
+      } else {
+        throw err;
+      }
+    });
+    server.once('listening', () => {
+      if (started) return;
+      started = true;
+      if (callback) callback(p);
+    });
+    server.listen(p);
+  }
+
+  tryListen(port);
   return server;
 }
