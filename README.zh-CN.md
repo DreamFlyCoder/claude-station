@@ -143,23 +143,6 @@ claude-station/
 
 ---
 
-## 后续计划
-
-欢迎提 PR 完善以下方向：
-
-- **Open in Terminal** 按钮：osascript / iTerm / tmux 适配，一键开新窗口续聊
-- 用 Claude API 自动生成 **会话一句话摘要**
-- CLAUDE.md **冲突检测**（global / project / local 三级规则相互冲突时飘红）
-- i18n：当前 UI 主要是英文，仅 Resume tooltip 是中文，可做完整中英双语
-
----
-
 ## 许可证
 
 MIT
-
----
-
-## 致谢
-
-灵感来自 [`ccusage`](https://github.com/ryoppippi/ccusage) 和 [`claude-atlas`](https://github.com/bernabranco/claude-atlas) 这两个优秀项目，但聚焦的方向不同 — claude-station 关注**会话历史 + 续聊**工作流，前两者一个偏成本分析、一个偏配置静态 lint。三者互补使用更好。

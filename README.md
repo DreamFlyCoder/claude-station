@@ -143,23 +143,6 @@ claude-station/
 
 ---
 
-## Roadmap
-
-Potential next steps (PRs welcome):
-
-- Open in Terminal button (osascript / iTerm / tmux adapters) for one-click resume
-- AI-generated session summaries
-- CLAUDE.md conflict detection across global / project / local scope
-- i18n (currently English-only UI; Chinese strings only in resume tooltip)
-
----
-
 ## License
 
 MIT
-
----
-
-## Acknowledgments
-
-Inspired by the great work in [`ccusage`](https://github.com/ryoppippi/ccusage) and [`claude-atlas`](https://github.com/bernabranco/claude-atlas), but focused on the **session history + Resume** workflow rather than usage analytics or static linting.
