@@ -4,7 +4,7 @@
 
 [English README](./README.md)
 
-![首页仪表盘](./docs/screenshots/home.png)
+![首页仪表盘](https://raw.githubusercontent.com/DreamFlyCoder/claude-station/main/docs/screenshots/home.png)
 
 `claude-station` 把散落在 `~/.claude/` 里的所有数据读出来，渲染成一个本地 Web 看板。**数据永不离开你的电脑**，不依赖任何前端框架或构建工具，只用 Node.js 标准库。
 
@@ -44,13 +44,13 @@ Claude Station 把这些一次性做齐。
 |  |  |
 |---|---|
 | 首页仪表盘 | 项目会话列表 |
-| ![Home](./docs/screenshots/home.png) | ![Project](./docs/screenshots/project.png) |
+| ![Home](https://raw.githubusercontent.com/DreamFlyCoder/claude-station/main/docs/screenshots/home.png) | ![Project](https://raw.githubusercontent.com/DreamFlyCoder/claude-station/main/docs/screenshots/project.png) |
 | 会话详情 | Config Center |
-| ![Session](./docs/screenshots/session.png) | ![Config](./docs/screenshots/config.png) |
+| ![Session](https://raw.githubusercontent.com/DreamFlyCoder/claude-station/main/docs/screenshots/session.png) | ![Config](https://raw.githubusercontent.com/DreamFlyCoder/claude-station/main/docs/screenshots/config.png) |
 
 Archive 页面（删除/恢复/永久删除）：
 
-![Archive](./docs/screenshots/archive.png)
+![Archive](https://raw.githubusercontent.com/DreamFlyCoder/claude-station/main/docs/screenshots/archive.png)
 
 ---
 

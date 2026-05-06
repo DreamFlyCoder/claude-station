@@ -4,7 +4,7 @@
 
 [中文 README](./README.zh-CN.md)
 
-![Home dashboard](./docs/screenshots/home.png)
+![Home dashboard](https://raw.githubusercontent.com/DreamFlyCoder/claude-station/main/docs/screenshots/home.png)
 
 `claude-station` reads everything from your local `~/.claude/` directory and renders it as a navigable web UI. No data leaves your machine. No build tools, no framework, no database — just Node.js standard library.
 
@@ -44,13 +44,13 @@ Claude Station fixes all of that in one local web app.
 |  |  |
 |---|---|
 | Home dashboard | Project sessions |
-| ![Home](./docs/screenshots/home.png) | ![Project](./docs/screenshots/project.png) |
+| ![Home](https://raw.githubusercontent.com/DreamFlyCoder/claude-station/main/docs/screenshots/home.png) | ![Project](https://raw.githubusercontent.com/DreamFlyCoder/claude-station/main/docs/screenshots/project.png) |
 | Session detail | Config Center |
-| ![Session](./docs/screenshots/session.png) | ![Config](./docs/screenshots/config.png) |
+| ![Session](https://raw.githubusercontent.com/DreamFlyCoder/claude-station/main/docs/screenshots/session.png) | ![Config](https://raw.githubusercontent.com/DreamFlyCoder/claude-station/main/docs/screenshots/config.png) |
 
 Archive page (delete & restore):
 
-![Archive](./docs/screenshots/archive.png)
+![Archive](https://raw.githubusercontent.com/DreamFlyCoder/claude-station/main/docs/screenshots/archive.png)
 
 ---
 
