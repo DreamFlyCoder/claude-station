@@ -2,6 +2,11 @@
 
 > 浏览、搜索、编辑、续聊你的 Claude Code 会话历史 — 零 npm 依赖、零构建步骤、纯本地运行。
 
+[![npm version](https://img.shields.io/npm/v/claude-station.svg)](https://www.npmjs.com/package/claude-station)
+[![npm downloads](https://img.shields.io/npm/dm/claude-station.svg)](https://www.npmjs.com/package/claude-station)
+[![License: MIT](https://img.shields.io/npm/l/claude-station.svg)](LICENSE)
+[![Node](https://img.shields.io/node/v/claude-station.svg)](https://nodejs.org)
+
 [English README](./README.md)
 
 ![首页仪表盘](https://raw.githubusercontent.com/DreamFlyCoder/claude-station/main/docs/screenshots/home.png)
@@ -57,13 +62,11 @@ Archive 页面（删除/恢复/永久删除）：
 ## 安装与启动
 
 ```bash
-# 一行启动，不装到全局
+# 一行启动，不装到全局（推荐）
 npx claude-station
 
-# 或者克隆并 link 到全局
-git clone https://github.com/DreamFlyCoder/claude-station.git
-cd claude-station
-npm link
+# 或者全局安装
+npm install -g claude-station
 claude-station
 ```
 

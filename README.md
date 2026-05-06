@@ -2,6 +2,11 @@
 
 > A local web dashboard to browse, search, edit and resume your Claude Code sessions — zero npm dependencies, zero build step.
 
+[![npm version](https://img.shields.io/npm/v/claude-station.svg)](https://www.npmjs.com/package/claude-station)
+[![npm downloads](https://img.shields.io/npm/dm/claude-station.svg)](https://www.npmjs.com/package/claude-station)
+[![License: MIT](https://img.shields.io/npm/l/claude-station.svg)](LICENSE)
+[![Node](https://img.shields.io/node/v/claude-station.svg)](https://nodejs.org)
+
 [中文 README](./README.zh-CN.md)
 
 ![Home dashboard](https://raw.githubusercontent.com/DreamFlyCoder/claude-station/main/docs/screenshots/home.png)
@@ -60,10 +65,8 @@ Archive page (delete & restore):
 # Run without installing (recommended)
 npx claude-station
 
-# Or clone & link locally
-git clone https://github.com/DreamFlyCoder/claude-station.git
-cd claude-station
-npm link
+# Or install globally
+npm install -g claude-station
 claude-station
 ```
 
