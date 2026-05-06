@@ -94,7 +94,7 @@ function renderTopProjects(byProject, limit = 10) {
  * using Sonnet pricing as a baseline.
  */
 function renderCostLine(byDay) {
-  const W = 480, H = 140, PADL = 30, PADR = 8, PADT = 8, PADB = 18;
+  const W = 480, H = 160, PADL = 52, PADR = 12, PADT = 12, PADB = 32;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const days = [];
@@ -107,27 +107,38 @@ function renderCostLine(byDay) {
   const innerW = W - PADL - PADR;
   const innerH = H - PADT - PADB;
 
-  const points = days.map((d, i) => {
-    const x = PADL + (i / (days.length - 1)) * innerW;
-    const y = PADT + innerH - (d.cost / maxCost) * innerH;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(' ');
+  const dotData = days.map((d, i) => ({
+    x: PADL + (i / (days.length - 1)) * innerW,
+    y: PADT + innerH - (d.cost / maxCost) * innerH,
+    key: d.key,
+    cost: d.cost,
+  }));
+  const points = dotData.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
 
-  const xLabels = [0, Math.floor(days.length / 2), days.length - 1].map(i => {
-    const x = PADL + (i / (days.length - 1)) * innerW;
-    return `<text class="label" x="${x.toFixed(1)}" y="${H - 4}" text-anchor="middle">${days[i].key.slice(5)}</text>`;
+  // X labels: every ~7 days so we get 5 ticks
+  const tickIdx = [0, 7, 14, 21, 29];
+  const xLabels = tickIdx.map(i => {
+    const p = dotData[i];
+    return `<text class="label" x="${p.x.toFixed(1)}" y="${H - 8}" text-anchor="middle">${days[i].key.slice(5)}</text>`;
   }).join('');
 
   const gridLines = [0, 0.5, 1].map(t => {
     const y = PADT + innerH - t * innerH;
     return `<line class="grid" x1="${PADL}" y1="${y.toFixed(1)}" x2="${W - PADR}" y2="${y.toFixed(1)}"/>
-            <text class="label" x="${PADL - 4}" y="${(y + 3).toFixed(1)}" text-anchor="end">$${(maxCost * t).toFixed(2)}</text>`;
+            <text class="label" x="${PADL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">$${(maxCost * t).toFixed(2)}</text>`;
+  }).join('');
+
+  // Per-point dot with native SVG <title> tooltip on hover
+  const dots = dotData.map(p => {
+    const tip = `${p.key} · $${p.cost.toFixed(2)}`;
+    return `<circle class="dot" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.4"><title>${tip}</title></circle>`;
   }).join('');
 
   return `<svg class="line-chart" width="100%" viewBox="0 0 ${W} ${H}" role="img" aria-label="Estimated daily cost, last 30 days">
     ${gridLines}
     <line class="axis" x1="${PADL}" y1="${PADT + innerH}" x2="${W - PADR}" y2="${PADT + innerH}"/>
     <polyline class="line" points="${points}"/>
+    ${dots}
     ${xLabels}
   </svg>`;
 }

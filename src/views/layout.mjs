@@ -746,16 +746,16 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 20px;
-      min-height: 280px;
+      padding: 16px;
+      min-height: 200px;
       box-shadow: var(--shadow-sm);
       display: flex;
       flex-direction: column;
     }
     .hero-block h3 {
       color: var(--accent);
-      font-size: 0.9rem;
-      margin-bottom: 14px;
+      font-size: 0.82rem;
+      margin-bottom: 10px;
       font-weight: 600;
       letter-spacing: 0.02em;
     }
@@ -763,7 +763,7 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       display: grid;
       grid-template-columns: 1fr 1fr;
       grid-template-rows: 1fr 1fr;
-      gap: 10px;
+      gap: 8px;
       flex: 1;
     }
     .stats-grid .stat-box {
@@ -771,16 +771,16 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 16px 12px;
+      padding: 10px 8px;
       min-height: 0;
     }
     .stats-grid .stat-box .num {
-      font-size: 2.2rem;
+      font-size: 1.55rem;
       line-height: 1.1;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
     .stats-grid .stat-box .label {
-      font-size: 0.78rem;
+      font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
@@ -856,13 +856,13 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 20px;
+      padding: 16px;
       box-shadow: var(--shadow-sm);
-      min-height: 320px;
+      min-height: 240px;
       display: flex;
       flex-direction: column;
     }
-    .dash-card h3 { margin-bottom: 14px; }
+    .dash-card h3 { margin-bottom: 10px; font-size: 0.95rem; }
     .dash-card .chart-body { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
 
     .heatmap { display: block; }
@@ -916,7 +916,15 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
     .line-chart .grid { stroke: var(--border); stroke-width: 0.5; }
     .line-chart .axis { stroke: var(--border-strong); stroke-width: 1; }
     .line-chart .line { stroke: var(--accent); stroke-width: 1.5; fill: none; }
-    .line-chart .label { fill: var(--fg-dim); font-size: 9px; }
+    .line-chart .label { fill: var(--fg-dim); font-size: 10px; }
+    .line-chart .dot {
+      fill: var(--accent);
+      stroke: var(--bg-card);
+      stroke-width: 1.5;
+      transition: r 160ms cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+    .line-chart .dot:hover { r: 5.5; stroke-width: 2; }
 
     /* ===== Tabs (config center) ===== */
     .tabs {
