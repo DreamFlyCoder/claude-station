@@ -1,5 +1,6 @@
 import { layout } from './layout.mjs';
 import { getSessions, getProjectClaudeMd, getRealPath } from '../scanner.mjs';
+import { join } from 'node:path';
 
 function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -21,20 +22,42 @@ function formatTime(ts) {
 
 const RESUME_TIP = 'Copy to terminal to open and continue this claude code conversation';
 
+function renderProjectMdEditor(realPath, projectMd) {
+  const path = join(realPath, 'CLAUDE.md');
+  const content = projectMd || '';
+  return `
+    <div class="claude-md-section md-editor" data-path="${escapeHtml(path)}">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <strong style="color:var(--accent);">Project CLAUDE.md</strong>
+        <div>
+          <button class="btn-md-edit md-editor-btn" type="button">Edit</button>
+        </div>
+      </div>
+      <div class="md-view">
+        ${projectMd ? `<div data-md>${escapeHtml(projectMd)}</div>` : `<p style="color:var(--fg-dim); font-size:0.85rem;">No CLAUDE.md at <code>${escapeHtml(path)}</code>. Click Edit to create one.</p>`}
+      </div>
+      <div class="md-edit" style="display:none;">
+        <textarea aria-label="Project CLAUDE.md content">${escapeHtml(content)}</textarea>
+        <div class="actions">
+          <button class="btn-md-save primary" type="button">Save</button>
+          <button class="btn-md-cancel" type="button">Cancel</button>
+          <span style="color:var(--fg-faint); font-size:0.75rem; align-self:center;">A timestamped backup will be created.</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 export async function renderProject(escapedPath) {
   const realPath = await getRealPath(escapedPath);
   const sessions = await getSessions(escapedPath);
   const projectMd = await getProjectClaudeMd(realPath);
 
-  const projectMdHtml = projectMd
-    ? `<details class="claude-md-section" open>
-        <summary>Project CLAUDE.md</summary>
-        <div data-md>${escapeHtml(projectMd)}</div>
-       </details>`
-    : '';
+  const editorHtml = renderProjectMdEditor(realPath, projectMd);
 
   const sessionCards = sessions.map(s => {
     const resumeCmd = `cd ${realPath} && claude --resume ${s.id}`;
+    const archiveUrl = `/api/session/${encodeURIComponent(escapedPath)}/${s.id}/archive`;
     return `
     <div class="card" style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
       <div style="flex:1; min-width:0;">
@@ -44,10 +67,13 @@ export async function renderProject(escapedPath) {
           ${s.messageCount} messages &middot; ${formatSize(s.fileSize)}
         </div>
       </div>
-      <span class="resume-wrap">
-        <button class="btn-resume" data-cmd="${escapeHtml(resumeCmd)}" title="${RESUME_TIP}">Resume</button>
-        <span class="tip">${RESUME_TIP}</span>
-      </span>
+      <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
+        <span class="resume-wrap">
+          <button class="btn-resume" data-cmd="${escapeHtml(resumeCmd)}" title="${RESUME_TIP}">Resume</button>
+          <span class="tip">${RESUME_TIP}</span>
+        </span>
+        <button class="btn-archive" data-url="${archiveUrl}" data-redirect="/project/${encodeURIComponent(escapedPath)}" title="Archive this session">🗑 Archive</button>
+      </div>
     </div>`;
   }).join('');
 
@@ -58,9 +84,9 @@ export async function renderProject(escapedPath) {
         <div class="label">Sessions</div>
       </div>
     </div>
-    ${projectMdHtml}
     <h2 style="color:var(--accent); margin-bottom:12px; font-size:1.1rem;">Sessions</h2>
     ${sessionCards || '<p style="color:var(--fg-dim);">No sessions found.</p>'}
+    ${editorHtml}
   `;
 
   return layout(realPath, content, {

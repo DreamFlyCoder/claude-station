@@ -20,6 +20,9 @@ export async function renderSession(escapedPath, sessionId) {
   const messages = await getSessionMessages(escapedPath, sessionId);
 
   const resumeCmd = `cd ${realPath} && claude --resume ${sessionId}`;
+  const exportUrl = `/api/session/${encodeURIComponent(escapedPath)}/${sessionId}/export.md`;
+  const archiveUrl = `/api/session/${encodeURIComponent(escapedPath)}/${sessionId}/archive`;
+  const projectUrl = `/project/${encodeURIComponent(escapedPath)}`;
 
   const messagesHtml = messages.map(m => `
     <div class="msg ${m.role === 'user' ? 'user' : 'assistant'}">
@@ -30,15 +33,19 @@ export async function renderSession(escapedPath, sessionId) {
   `).join('');
 
   const content = `
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:8px; flex-wrap:wrap;">
       <div>
         <span style="color:var(--fg-dim); font-size:0.85rem;">Session ${sessionId.slice(0, 8)}...</span>
         <span style="color:var(--fg-faint); font-size:0.8rem; margin-left:8px;">${messages.length} messages</span>
       </div>
-      <span class="resume-wrap">
-        <button class="btn-resume" data-cmd="${escapeHtml(resumeCmd)}" title="${RESUME_TIP}">Resume</button>
-        <span class="tip">${RESUME_TIP}</span>
-      </span>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <a class="btn-export" href="${exportUrl}" title="Download as Markdown">⬇ Export MD</a>
+        <span class="resume-wrap">
+          <button class="btn-resume" data-cmd="${escapeHtml(resumeCmd)}" title="${RESUME_TIP}">Resume</button>
+          <span class="tip">${RESUME_TIP}</span>
+        </span>
+        <button class="btn-archive" data-url="${archiveUrl}" data-redirect="${projectUrl}" title="Archive this session">🗑 Archive</button>
+      </div>
     </div>
     <div class="chat">
       ${messagesHtml || '<p style="color:var(--fg-dim);">No messages in this session.</p>'}
@@ -48,7 +55,7 @@ export async function renderSession(escapedPath, sessionId) {
   return layout(`Session ${sessionId.slice(0, 8)}`, content, {
     breadcrumbs: [
       { label: 'Home', href: '/' },
-      { label: realPath, href: `/project/${encodeURIComponent(escapedPath)}` },
+      { label: realPath, href: projectUrl },
       { label: `Session ${sessionId.slice(0, 8)}...` },
     ],
     activeEscapedPath: escapedPath,
