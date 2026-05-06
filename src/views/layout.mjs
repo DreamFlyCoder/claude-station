@@ -36,7 +36,7 @@ function shortName(realPath) {
   return b || realPath;
 }
 
-function renderSidebar(projects, activeEscapedPath, isHome) {
+function renderSidebar(projects, activeEscapedPath, isHome, isConfig) {
   const items = projects.map(p => {
     const isActive = p.escapedPath === activeEscapedPath;
     const name = shortName(p.realPath);
@@ -59,6 +59,7 @@ function renderSidebar(projects, activeEscapedPath, isHome) {
     </nav>
     <div class="sb-footer">
       <a class="sb-global${isHome ? ' active' : ''}" href="/">🌐 Global CLAUDE.md</a>
+      <a class="sb-global${isConfig ? ' active' : ''}" href="/config">⚙️ Config Center</a>
     </div>
   </aside>`;
 }
@@ -70,8 +71,9 @@ function renderSidebar(projects, activeEscapedPath, isHome) {
  * @param {Array<{label,href?}>} [opts.breadcrumbs]
  * @param {string} [opts.activeEscapedPath] — escapedPath of the active project (for sidebar highlight)
  * @param {boolean} [opts.isHome] — true when rendering the home page
+ * @param {boolean} [opts.isConfig] — true when rendering the config center
  */
-export async function layout(title, content, { breadcrumbs = [], activeEscapedPath = null, isHome = false } = {}) {
+export async function layout(title, content, { breadcrumbs = [], activeEscapedPath = null, isHome = false, isConfig = false } = {}) {
   const marked = await getMarkedJs();
   const projects = await getProjects();
 
@@ -83,7 +85,7 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       ).join('')}</nav>`
     : '';
 
-  const sidebarHtml = renderSidebar(projects, activeEscapedPath, isHome);
+  const sidebarHtml = renderSidebar(projects, activeEscapedPath, isHome, isConfig);
 
   return `<!DOCTYPE html>
 <html lang="en" data-theme="dark">
@@ -546,6 +548,271 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
     }
     .stat-box .num { font-size: 1.5rem; color: var(--accent); font-weight: 700; }
     .stat-box .label { font-size: 0.75rem; color: var(--fg-dim); }
+
+    /* ===== Top search bar ===== */
+    .top-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .top-search input {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border-input);
+      color: var(--fg);
+      padding: 7px 12px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .top-search input:focus { border-color: var(--accent); }
+    .top-search button {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .top-search button:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ===== Dashboard sections ===== */
+    .dash-section { margin-bottom: 28px; }
+    .dash-section h3 {
+      color: var(--accent);
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 900px) { .dash-grid { grid-template-columns: 1fr; } }
+
+    .heatmap { display: block; }
+    .heatmap rect { stroke: var(--border); stroke-width: 0.5; }
+    .heat-0 { fill: var(--bg-input); }
+    .heat-1 { fill: #9be9a8; }
+    .heat-2 { fill: #40c463; }
+    .heat-3 { fill: #30a14e; }
+    .heat-4 { fill: #216e39; }
+    [data-theme="light"] .heat-0 { fill: #ebedf0; }
+
+    .bar-chart .bar-row {
+      display: grid;
+      grid-template-columns: 160px 1fr 80px;
+      gap: 8px;
+      align-items: center;
+      margin: 4px 0;
+      font-size: 0.8rem;
+    }
+    .bar-chart .bar-row .name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--fg);
+    }
+    .bar-chart .bar-row .name a { color: var(--accent-link); text-decoration: none; }
+    .bar-chart .bar-row .name a:hover { text-decoration: underline; }
+    .bar-chart .bar-row .track {
+      background: var(--bg-input);
+      border-radius: 3px;
+      height: 14px;
+      overflow: hidden;
+    }
+    .bar-chart .bar-row .fill {
+      background: var(--accent);
+      height: 100%;
+    }
+    .bar-chart .bar-row .num {
+      color: var(--fg-dim);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .line-chart { display: block; }
+    .line-chart .grid { stroke: var(--border); stroke-width: 0.5; }
+    .line-chart .axis { stroke: var(--border-strong); stroke-width: 1; }
+    .line-chart .line { stroke: var(--accent); stroke-width: 1.5; fill: none; }
+    .line-chart .label { fill: var(--fg-dim); font-size: 9px; }
+
+    /* ===== Tabs (config center) ===== */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 14px;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      border-bottom: none;
+      color: var(--fg-muted);
+      padding: 7px 14px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border-radius: 6px 6px 0 0;
+      margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: var(--fg); background: var(--bg-hover); }
+    .tab-btn.active {
+      background: var(--bg-card);
+      border-color: var(--border);
+      color: var(--accent);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .config-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+    }
+    .config-card .name {
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .config-card .path {
+      color: var(--fg-faint);
+      font-size: 0.7rem;
+      margin-top: 2px;
+      word-break: break-all;
+    }
+    .config-card .desc {
+      color: var(--fg-muted);
+      font-size: 0.82rem;
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    /* ===== Search results ===== */
+    .search-result {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+    }
+    .search-result .head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 0.78rem;
+      color: var(--fg-dim);
+      margin-bottom: 6px;
+    }
+    .search-result .head a { color: var(--accent-link); text-decoration: none; font-weight: 500; }
+    .search-result .head a:hover { text-decoration: underline; }
+    .search-result .snippet {
+      font-size: 0.85rem;
+      color: var(--fg);
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .search-result mark {
+      background: var(--accent);
+      color: var(--bg);
+      padding: 0 2px;
+      border-radius: 2px;
+    }
+
+    /* ===== Archive button ===== */
+    .btn-archive {
+      background: transparent;
+      color: var(--fg-dim);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-archive:hover {
+      color: #e57373;
+      border-color: #e57373;
+    }
+    .btn-export {
+      background: transparent;
+      color: var(--fg-muted);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: inherit;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-export:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* ===== CLAUDE.md editor ===== */
+    .md-editor textarea {
+      width: 100%;
+      min-height: 320px;
+      background: var(--bg-input);
+      color: var(--fg);
+      border: 1px solid var(--border-input);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      outline: none;
+      resize: vertical;
+    }
+    .md-editor textarea:focus { border-color: var(--accent); }
+    .md-editor .actions {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+    }
+    .md-editor button {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 5px 12px;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .md-editor button.primary { color: var(--accent); border-color: var(--accent); }
+    .md-editor button:hover { background: var(--bg-hover); }
+    .md-editor button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ===== Toast ===== */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--bg-card);
+      color: var(--fg);
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      padding: 10px 16px;
+      font-size: 0.85rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 1000;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.error { border-color: #e57373; }
   </style>
 </head>
 <body>
@@ -558,12 +825,17 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       ${sidebarHtml}
     </aside>
     <main class="main">
+      <form class="top-search" action="/search" method="GET" role="search">
+        <input type="search" name="q" placeholder="Search session content (Enter)..." aria-label="Search sessions" />
+        <button type="submit">Search</button>
+      </form>
       <div class="main-header">
         ${breadcrumbHtml || '<div style="font-size:0.85rem;color:var(--fg-dim);">' + escapeHtml(title) + '</div>'}
       </div>
       ${content}
     </main>
   </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script>${marked}</script>
   <script>
     // Render all markdown blocks
@@ -623,6 +895,102 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
         });
       });
     })();
+
+    // Toast helper
+    window.toast = function(msg, opts) {
+      opts = opts || {};
+      const el = document.getElementById('toast');
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.toggle('error', !!opts.error);
+      el.classList.add('show');
+      clearTimeout(el._t);
+      el._t = setTimeout(() => el.classList.remove('show'), opts.duration || 2000);
+    };
+
+    // Tabs (config center)
+    (function() {
+      document.querySelectorAll('[data-tabs]').forEach(group => {
+        const btns = group.querySelectorAll('.tab-btn');
+        const panels = group.querySelectorAll('.tab-panel');
+        btns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            const target = btn.dataset.tab;
+            btns.forEach(b => b.classList.toggle('active', b === btn));
+            panels.forEach(p => p.classList.toggle('active', p.dataset.tab === target));
+          });
+        });
+      });
+    })();
+
+    // Archive button
+    document.querySelectorAll('.btn-archive').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Archive this session? The jsonl file will be moved to ~/.claude/projects/.archive/. You can restore it manually.')) return;
+        const url = btn.dataset.url;
+        btn.disabled = true;
+        try {
+          const res = await fetch(url, { method: 'POST' });
+          const data = await res.json();
+          if (!res.ok || !data.ok) throw new Error(data.error || 'archive failed');
+          window.toast('Archived');
+          const redirect = btn.dataset.redirect;
+          setTimeout(() => { if (redirect) location.replace(redirect); else location.reload(); }, 500);
+        } catch (e) {
+          window.toast('Archive failed: ' + e.message, { error: true, duration: 3000 });
+          btn.disabled = false;
+        }
+      });
+    });
+
+    // CLAUDE.md editor (multiple instances supported)
+    document.querySelectorAll('.md-editor').forEach(wrap => {
+      const path = wrap.dataset.path;
+      const view = wrap.querySelector('.md-view');
+      const editor = wrap.querySelector('.md-edit');
+      const ta = wrap.querySelector('textarea');
+      const btnEdit = wrap.querySelector('.btn-md-edit');
+      const btnSave = wrap.querySelector('.btn-md-save');
+      const btnCancel = wrap.querySelector('.btn-md-cancel');
+      let original = ta ? ta.value : '';
+
+      if (btnEdit) btnEdit.addEventListener('click', () => {
+        view.style.display = 'none';
+        editor.style.display = '';
+        original = ta.value;
+      });
+      if (btnCancel) btnCancel.addEventListener('click', () => {
+        ta.value = original;
+        editor.style.display = 'none';
+        view.style.display = '';
+      });
+      if (btnSave) btnSave.addEventListener('click', async () => {
+        btnSave.disabled = true;
+        try {
+          const res = await fetch('/api/claude-md', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: path, content: ta.value }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.ok) throw new Error(data.error || 'save failed');
+          window.toast('Saved');
+          // Refresh markdown preview without full reload
+          const md = view.querySelector('[data-md]');
+          if (md) {
+            md.textContent = ta.value;
+            md.innerHTML = window.marked ? window.marked.parse(ta.value) : ta.value;
+          }
+          original = ta.value;
+          editor.style.display = 'none';
+          view.style.display = '';
+        } catch (e) {
+          window.toast('Save failed: ' + e.message, { error: true, duration: 3000 });
+        } finally {
+          btnSave.disabled = false;
+        }
+      });
+    });
   </script>
 </body>
 </html>`;

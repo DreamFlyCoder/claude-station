@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "node bin/cli.mjs",
-    "test": "node --test test/scanner.test.mjs"
+    "test": "node --test test/"
   },
   "license": "MIT"
 }
