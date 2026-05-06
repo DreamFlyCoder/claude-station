@@ -138,7 +138,7 @@ function renderClaudeMdEditor(globalMd) {
   return `
     <div class="claude-md-section md-editor" data-path="${escapeHtml(path)}">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <strong style="color:var(--accent);">Global CLAUDE.md</strong>
+        <span class="claude-md-title"><span class="icon">📕</span>Global CLAUDE.md</span>
         <div>
           <button class="btn-md-edit md-editor-btn" type="button">Edit</button>
         </div>
@@ -173,41 +173,47 @@ export async function renderHome() {
   const editorHtml = renderClaudeMdEditor(globalMd);
 
   const content = `
-    <div class="stats">
-      <div class="stat-box">
-        <div class="num">${projects.length}</div>
-        <div class="label">Projects</div>
+    <div class="hero-grid">
+      <div class="hero-block">
+        <h3>Overview</h3>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="num">${projects.length}</div>
+            <div class="label">Projects</div>
+          </div>
+          <div class="stat-box">
+            <div class="num">${totalSessions}</div>
+            <div class="label">Sessions</div>
+          </div>
+          <div class="stat-box">
+            <div class="num">$${stats.totals.cost.toFixed(2)}</div>
+            <div class="label">Est. Cost</div>
+          </div>
+          <div class="stat-box">
+            <div class="num">${(stats.totals.outputTokens / 1000).toFixed(0)}k</div>
+            <div class="label">Output Tokens</div>
+          </div>
+        </div>
       </div>
-      <div class="stat-box">
-        <div class="num">${totalSessions}</div>
-        <div class="label">Sessions</div>
+      <div class="hero-block">
+        <h3>Activity (last 90 days)</h3>
+        <div class="heatmap-wrap">${heatmapHtml}</div>
       </div>
-      <div class="stat-box">
-        <div class="num">$${stats.totals.cost.toFixed(2)}</div>
-        <div class="label">Est. Cost</div>
-      </div>
-      <div class="stat-box">
-        <div class="num">${(stats.totals.outputTokens / 1000).toFixed(0)}k</div>
-        <div class="label">Output Tokens</div>
-      </div>
-    </div>
-
-    <div class="dash-section">
-      <h3>Activity (last 90 days)</h3>
-      ${heatmapHtml}
     </div>
 
     <div class="dash-grid">
-      <div class="dash-section">
+      <div class="dash-card">
         <h3>Top Projects</h3>
-        ${topProjectsHtml}
+        <div class="chart-body">${topProjectsHtml}</div>
       </div>
-      <div class="dash-section">
+      <div class="dash-card">
         <h3>Estimated Daily Cost (last 30 days)</h3>
-        ${costLineHtml}
-        <p style="color:var(--fg-faint); font-size:0.7rem; margin-top:4px;">
-          Rough estimate using Sonnet pricing ($3/MTok input, $15/MTok output).
-        </p>
+        <div class="chart-body">
+          ${costLineHtml}
+          <p style="color:var(--fg-faint); font-size:0.7rem; margin-top:4px;">
+            Rough estimate using Sonnet pricing ($3/MTok input, $15/MTok output).
+          </p>
+        </div>
       </div>
     </div>
 
