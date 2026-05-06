@@ -1,4 +1,4 @@
-# Claude Atlas
+# Claude Station
 
 Local web dashboard to visualize and manage Claude Code session history.
 

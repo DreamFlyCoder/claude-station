@@ -90,7 +90,7 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(title)} - Claude Atlas</title>
+  <title>${escapeHtml(title)} - Claude Station</title>
   <script>
     // Apply theme before paint to avoid flash
     (function() {
@@ -552,7 +552,7 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
   <div class="app">
     <aside class="sidebar-wrap">
       <div class="topbar">
-        <h1><a href="/">Claude Atlas</a></h1>
+        <h1><a href="/">Claude Station</a></h1>
         <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">🌙</button>
       </div>
       ${sidebarHtml}

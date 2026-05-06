@@ -6,7 +6,7 @@ const PORT = parseInt(process.env.PORT || '3456', 10);
 
 startServer(PORT, () => {
   const url = `http://localhost:${PORT}`;
-  console.log(`claude-atlas running at ${url}`);
+  console.log(`claude-station running at ${url}`);
 
   // Auto-open browser
   const { platform } = process;

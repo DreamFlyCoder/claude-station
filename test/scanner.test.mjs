@@ -112,7 +112,7 @@ describe('server routes', () => {
       const res = await fetch(`http://localhost:${port}/`);
       assert.equal(res.status, 200);
       const text = await res.text();
-      assert.ok(text.includes('Claude Atlas'), 'should contain title');
+      assert.ok(text.includes('Claude Station'), 'should contain title');
       assert.ok(text.includes('Projects'), 'should contain Projects heading');
     } finally {
       server.close();
