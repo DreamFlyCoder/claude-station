@@ -1,0 +1,14 @@
+{
+  "name": "claude-atlas",
+  "version": "1.0.0",
+  "description": "Local web dashboard to visualize and manage Claude Code session history",
+  "type": "module",
+  "bin": {
+    "claude-atlas": "./bin/cli.mjs"
+  },
+  "scripts": {
+    "start": "node bin/cli.mjs",
+    "test": "node --test test/scanner.test.mjs"
+  },
+  "license": "MIT"
+}
