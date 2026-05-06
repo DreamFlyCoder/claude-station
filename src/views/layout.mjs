@@ -50,7 +50,7 @@ function renderSidebar(projects, activeEscapedPath, isHome, isConfig) {
     </a>`;
   }).join('');
 
-  return `<aside class="sidebar">
+  return `<div class="sb-body">
     <div class="sb-header">
       <input class="sb-search" type="text" placeholder="Search projects..." aria-label="Search projects" id="sb-search-input" />
     </div>
@@ -61,7 +61,7 @@ function renderSidebar(projects, activeEscapedPath, isHome, isConfig) {
       <a class="sb-global${isHome ? ' active' : ''}" href="/">🌐 Global CLAUDE.md</a>
       <a class="sb-global${isConfig ? ' active' : ''}" href="/config">⚙️ Config Center</a>
     </div>
-  </aside>`;
+  </div>`;
 }
 
 /**
@@ -220,6 +220,13 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       height: 100vh;
       overflow: hidden;
     }
+    /* sb-body fills remaining height under topbar so footer pins to bottom */
+    .sb-body {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
     .main {
       flex: 1;
       min-width: 0;
@@ -242,7 +249,8 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       letter-spacing: 0.02em;
     }
     .topbar h1 a { color: inherit; text-decoration: none; }
-    .theme-toggle {
+    .topbar-actions { display: inline-flex; gap: 6px; align-items: center; }
+    .theme-toggle, .home-btn {
       background: transparent;
       border: 1px solid var(--border);
       color: var(--fg);
@@ -255,11 +263,14 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      text-decoration: none;
     }
-    .theme-toggle:hover {
+    .theme-toggle:hover, .home-btn:hover {
       background: var(--bg-hover);
       border-color: var(--border-strong);
     }
+    .home-btn:hover .icon { transform: scale(1.15); }
+    .home-btn .icon { display: inline-block; transition: transform 240ms cubic-bezier(0.4, 0, 0.2, 1); }
     .theme-toggle .icon {
       display: inline-block;
       transition: transform 600ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -1061,10 +1072,13 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
 </head>
 <body>
   <div class="app">
-    <aside class="sidebar-wrap">
+    <aside class="sidebar">
       <div class="topbar">
         <h1><a href="/">Claude Station</a></h1>
-        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme"><span class="icon">🌙</span></button>
+        <div class="topbar-actions">
+          <a class="home-btn" href="/" title="Home" aria-label="Home"><span class="icon">🏠</span></a>
+          <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme"><span class="icon">🌙</span></button>
+        </div>
       </div>
       ${sidebarHtml}
     </aside>
