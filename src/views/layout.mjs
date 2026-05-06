@@ -752,7 +752,7 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       flex-direction: column;
     }
     .hero-block.hero-stats { min-height: 0; }
-    .hero-block.hero-activity { min-height: 0; padding: 20px 24px; }
+    .hero-block.hero-activity { min-height: 0; }
     .hero-block h3 {
       color: var(--accent);
       font-size: 0.78rem;

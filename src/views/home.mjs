@@ -69,7 +69,7 @@ function renderHeatmap(byDay) {
     return `<rect class="heat-${lvl}" x="${x}" y="${y}" width="${SIZE}" height="${SIZE}" rx="2"><title>${c.key}: ${c.sessions} session${c.sessions === 1 ? '' : 's'}</title></rect>`;
   }).join('');
 
-  return `<svg class="heatmap" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="Sessions per day, last 90 days">${rects}</svg>`;
+  return `<svg class="heatmap" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" overflow="visible" role="img" aria-label="Sessions per day, last 90 days">${rects}</svg>`;
 }
 
 function renderTopProjects(byProject, limit = 10) {
