@@ -13,6 +13,8 @@ function formatTimestamp(ts) {
   });
 }
 
+const RESUME_TIP = '复制到终端打开继续此 claude code 对话';
+
 export async function renderSession(escapedPath, sessionId) {
   const realPath = await getRealPath(escapedPath);
   const messages = await getSessionMessages(escapedPath, sessionId);
@@ -30,13 +32,16 @@ export async function renderSession(escapedPath, sessionId) {
   const content = `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
       <div>
-        <span style="color:#888; font-size:0.85rem;">Session ${sessionId.slice(0, 8)}...</span>
-        <span style="color:#666; font-size:0.8rem; margin-left:8px;">${messages.length} messages</span>
+        <span style="color:var(--fg-dim); font-size:0.85rem;">Session ${sessionId.slice(0, 8)}...</span>
+        <span style="color:var(--fg-faint); font-size:0.8rem; margin-left:8px;">${messages.length} messages</span>
       </div>
-      <button class="btn-resume" data-cmd="${escapeHtml(resumeCmd)}">Resume</button>
+      <span class="resume-wrap">
+        <button class="btn-resume" data-cmd="${escapeHtml(resumeCmd)}" title="${RESUME_TIP}">Resume</button>
+        <span class="tip">${RESUME_TIP}</span>
+      </span>
     </div>
     <div class="chat">
-      ${messagesHtml || '<p style="color:#888;">No messages in this session.</p>'}
+      ${messagesHtml || '<p style="color:var(--fg-dim);">No messages in this session.</p>'}
     </div>
   `;
 
@@ -46,5 +51,6 @@ export async function renderSession(escapedPath, sessionId) {
       { label: realPath, href: `/project/${encodeURIComponent(escapedPath)}` },
       { label: `Session ${sessionId.slice(0, 8)}...` },
     ],
+    activeEscapedPath: escapedPath,
   });
 }

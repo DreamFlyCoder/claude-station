@@ -19,6 +19,8 @@ function formatTime(ts) {
   });
 }
 
+const RESUME_TIP = '复制到终端打开继续此 claude code 对话';
+
 export async function renderProject(escapedPath) {
   const realPath = await getRealPath(escapedPath);
   const sessions = await getSessions(escapedPath);
@@ -42,7 +44,10 @@ export async function renderProject(escapedPath) {
           ${s.messageCount} messages &middot; ${formatSize(s.fileSize)}
         </div>
       </div>
-      <button class="btn-resume" data-cmd="${escapeHtml(resumeCmd)}">Resume</button>
+      <span class="resume-wrap">
+        <button class="btn-resume" data-cmd="${escapeHtml(resumeCmd)}" title="${RESUME_TIP}">Resume</button>
+        <span class="tip">${RESUME_TIP}</span>
+      </span>
     </div>`;
   }).join('');
 
@@ -54,8 +59,8 @@ export async function renderProject(escapedPath) {
       </div>
     </div>
     ${projectMdHtml}
-    <h2 style="color:#c9a0ff; margin-bottom:12px; font-size:1.1rem;">Sessions</h2>
-    ${sessionCards || '<p style="color:#888;">No sessions found.</p>'}
+    <h2 style="color:var(--accent); margin-bottom:12px; font-size:1.1rem;">Sessions</h2>
+    ${sessionCards || '<p style="color:var(--fg-dim);">No sessions found.</p>'}
   `;
 
   return layout(realPath, content, {
@@ -63,5 +68,6 @@ export async function renderProject(escapedPath) {
       { label: 'Home', href: '/' },
       { label: realPath },
     ],
+    activeEscapedPath: escapedPath,
   });
 }
