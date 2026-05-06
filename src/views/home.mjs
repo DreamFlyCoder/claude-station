@@ -115,11 +115,13 @@ function renderCostLine(byDay) {
   }));
   const points = dotData.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
 
-  // X labels: every ~7 days so we get 5 ticks
+  // X labels: every ~7 days so we get 5 ticks; first/last anchored
+  // at the edge so they never spill past the viewBox.
   const tickIdx = [0, 7, 14, 21, 29];
-  const xLabels = tickIdx.map(i => {
+  const xLabels = tickIdx.map((i, idx) => {
     const p = dotData[i];
-    return `<text class="label" x="${p.x.toFixed(1)}" y="${H - 8}" text-anchor="middle">${days[i].key.slice(5)}</text>`;
+    const anchor = idx === 0 ? 'start' : (idx === tickIdx.length - 1 ? 'end' : 'middle');
+    return `<text class="label" x="${p.x.toFixed(1)}" y="${H - 8}" text-anchor="${anchor}">${days[i].key.slice(5)}</text>`;
   }).join('');
 
   const gridLines = [0, 0.5, 1].map(t => {
@@ -185,7 +187,7 @@ export async function renderHome() {
 
   const content = `
     <div class="hero-grid">
-      <div class="hero-block">
+      <div class="hero-block hero-stats">
         <h3>Overview</h3>
         <div class="stats-grid">
           <div class="stat-box">
@@ -206,7 +208,7 @@ export async function renderHome() {
           </div>
         </div>
       </div>
-      <div class="hero-block">
+      <div class="hero-block hero-activity">
         <h3>Activity (last 90 days)</h3>
         <div class="heatmap-wrap">${heatmapHtml}</div>
       </div>

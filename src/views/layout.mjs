@@ -737,7 +737,7 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       grid-template-columns: 1fr 1fr;
       gap: 20px;
       margin-bottom: 24px;
-      align-items: stretch;
+      align-items: start;
     }
     @media (max-width: 1024px) {
       .hero-grid { grid-template-columns: 1fr; }
@@ -746,41 +746,41 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 16px;
-      min-height: 200px;
+      padding: 14px;
       box-shadow: var(--shadow-sm);
       display: flex;
       flex-direction: column;
     }
+    .hero-block.hero-stats { min-height: 0; }
+    .hero-block.hero-activity { min-height: 200px; }
     .hero-block h3 {
       color: var(--accent);
-      font-size: 0.82rem;
-      margin-bottom: 10px;
+      font-size: 0.78rem;
+      margin-bottom: 8px;
       font-weight: 600;
       letter-spacing: 0.02em;
     }
     .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr 1fr;
+      grid-template-rows: auto auto;
       gap: 8px;
-      flex: 1;
     }
     .stats-grid .stat-box {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 10px 8px;
+      padding: 8px 8px;
       min-height: 0;
     }
     .stats-grid .stat-box .num {
-      font-size: 1.55rem;
+      font-size: 1.25rem;
       line-height: 1.1;
       margin-bottom: 2px;
     }
     .stats-grid .stat-box .label {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
@@ -812,6 +812,7 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       display: flex;
       align-items: center;
       gap: 8px;
+      height: 88px;
       margin-bottom: 12px;
     }
     .top-search input {
