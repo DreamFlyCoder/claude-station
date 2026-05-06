@@ -1,5 +1,5 @@
 import { layout } from './layout.mjs';
-import { getSessionMessages, escapedToRealPath } from '../scanner.mjs';
+import { getSessionMessages, getRealPath } from '../scanner.mjs';
 
 function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -14,7 +14,7 @@ function formatTimestamp(ts) {
 }
 
 export async function renderSession(escapedPath, sessionId) {
-  const realPath = '/' + escapedToRealPath(escapedPath);
+  const realPath = await getRealPath(escapedPath);
   const messages = await getSessionMessages(escapedPath, sessionId);
 
   const resumeCmd = `cd ${realPath} && claude --resume ${sessionId}`;

@@ -40,6 +40,26 @@ export function escapedToRealPath(escaped) {
 }
 
 /**
+ * Get the real filesystem path for an escaped project directory.
+ * Reads cwd from jsonl (reliable), falls back to heuristic.
+ */
+export async function getRealPath(escapedPath) {
+  const projectDir = join(PROJECTS_DIR, escapedPath);
+  let files;
+  try {
+    files = await readdir(projectDir);
+  } catch {
+    return '/' + escapedToRealPath(escapedPath);
+  }
+  const jsonlFiles = files.filter(f => f.endsWith('.jsonl'));
+  for (const f of jsonlFiles) {
+    const cwd = await extractCwdFromJsonl(join(projectDir, f));
+    if (cwd) return cwd;
+  }
+  return '/' + escapedToRealPath(escapedPath);
+}
+
+/**
  * Get the global CLAUDE.md content.
  */
 export async function getGlobalClaudeMd() {

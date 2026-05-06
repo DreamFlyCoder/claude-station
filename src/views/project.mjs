@@ -1,5 +1,5 @@
 import { layout } from './layout.mjs';
-import { getSessions, getProjectClaudeMd, escapedToRealPath } from '../scanner.mjs';
+import { getSessions, getProjectClaudeMd, getRealPath } from '../scanner.mjs';
 
 function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -20,7 +20,7 @@ function formatTime(ts) {
 }
 
 export async function renderProject(escapedPath) {
-  const realPath = '/' + escapedToRealPath(escapedPath);
+  const realPath = await getRealPath(escapedPath);
   const sessions = await getSessions(escapedPath);
   const projectMd = await getProjectClaudeMd(realPath);
 
