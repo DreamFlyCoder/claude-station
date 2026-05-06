@@ -763,24 +763,24 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
     .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      grid-template-rows: auto auto;
-      gap: 8px;
+      grid-template-rows: 1fr 1fr;
+      gap: 10px;
     }
     .stats-grid .stat-box {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 8px 8px;
+      padding: 16px 12px;
       min-height: 0;
     }
     .stats-grid .stat-box .num {
-      font-size: 1.6rem;
+      font-size: 2.2rem;
       line-height: 1.1;
-      margin-bottom: 2px;
+      margin-bottom: 4px;
     }
     .stats-grid .stat-box .label {
-      font-size: 0.7rem;
+      font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
