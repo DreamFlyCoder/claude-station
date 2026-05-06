@@ -62,20 +62,21 @@ export async function renderProject(escapedPath) {
     const resumeCmd = `cd ${realPath} && claude --resume ${s.id}`;
     const archiveUrl = `/api/session/${encodeURIComponent(escapedPath)}/${s.id}/archive`;
     return `
-    <div class="card" style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
-      <div style="flex:1; min-width:0;">
-        <a href="/session/${encodeURIComponent(escapedPath)}/${s.id}">${formatTime(s.startTime)}</a>
+    <div class="card session-card">
+      <a class="card-link" href="/session/${encodeURIComponent(escapedPath)}/${s.id}" aria-label="Open session ${formatTime(s.startTime)}"></a>
+      <div class="card-main">
+        <div class="card-title">${formatTime(s.startTime)}</div>
         <div class="preview">${escapeHtml(s.firstPrompt)}</div>
         <div class="meta">
           ${s.messageCount} messages &middot; ${formatSize(s.fileSize)}
         </div>
       </div>
-      <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
+      <div class="card-actions">
         <span class="resume-wrap">
           <button class="btn-resume" data-cmd="${escapeHtml(resumeCmd)}" title="${RESUME_TIP}">Resume</button>
           <span class="tip">${RESUME_TIP}</span>
         </span>
-        <button class="btn-archive" data-url="${archiveUrl}" data-redirect="/project/${encodeURIComponent(escapedPath)}" title="Archive this session">🗑 Archive</button>
+        <button class="btn-archive" data-url="${archiveUrl}" data-redirect="/project/${encodeURIComponent(escapedPath)}" title="Delete (moved to ~/.claude/projects/.archive/ for recovery)">🗑 Delete</button>
       </div>
     </div>`;
   }).join('');

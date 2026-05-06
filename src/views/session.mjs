@@ -44,7 +44,7 @@ export async function renderSession(escapedPath, sessionId) {
           <button class="btn-resume" data-cmd="${escapeHtml(resumeCmd)}" title="${RESUME_TIP}">Resume</button>
           <span class="tip">${RESUME_TIP}</span>
         </span>
-        <button class="btn-archive" data-url="${archiveUrl}" data-redirect="${projectUrl}" title="Archive this session">🗑 Archive</button>
+        <button class="btn-archive" data-url="${archiveUrl}" data-redirect="${projectUrl}" title="Delete (moved to ~/.claude/projects/.archive/ for recovery)">🗑 Delete</button>
       </div>
     </div>
     <div class="chat">

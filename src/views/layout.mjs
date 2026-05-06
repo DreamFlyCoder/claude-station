@@ -420,6 +420,42 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       transform: translateY(-2px);
     }
     .card a { color: var(--accent); text-decoration: none; font-weight: 500; }
+
+    /* Session card — entire row clickable via stretched <a> */
+    .session-card {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      cursor: pointer;
+    }
+    .session-card .card-link {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      border-radius: inherit;
+      text-decoration: none;
+    }
+    .session-card .card-main {
+      flex: 1;
+      min-width: 0;
+      position: relative;
+      pointer-events: none; /* let clicks fall through to the stretched <a> */
+    }
+    .session-card .card-title {
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .session-card .card-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1; /* above stretched link so buttons remain clickable */
+    }
     .card a:hover { text-decoration: underline; }
     .card .meta {
       font-size: 0.8rem;
@@ -797,7 +833,7 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
 
     .bar-chart .bar-row {
       display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) minmax(110px, auto);
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) minmax(170px, auto);
       gap: 10px;
       align-items: center;
       margin: 6px 0;

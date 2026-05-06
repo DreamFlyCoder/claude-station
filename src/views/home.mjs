@@ -82,7 +82,7 @@ function renderTopProjects(byProject, limit = 10) {
     return `<div class="bar-row">
       <div class="name"><a href="/project/${encodeURIComponent(p.escapedPath)}" title="${escapeHtml(p.realPath)}">${escapeHtml(name)}</a></div>
       <div class="track"><div class="fill" style="width:${pct.toFixed(1)}%"></div></div>
-      <div class="num">${p.sessions} · ${(p.totalTokens / 1000).toFixed(0)}k tok</div>
+      <div class="num"><strong>${p.sessions}</strong> sessions <span class="num-sep">·</span> <strong>${(p.totalTokens / 1000).toFixed(0)}k</strong> tokens</div>
     </div>`;
   }).join('');
   return `<div class="bar-chart">${rows}</div>`;
