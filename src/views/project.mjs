@@ -26,25 +26,28 @@ function renderProjectMdEditor(realPath, projectMd) {
   const path = join(realPath, 'CLAUDE.md');
   const content = projectMd || '';
   return `
-    <div class="claude-md-section md-editor" data-path="${escapeHtml(path)}">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <strong style="color:var(--accent);">Project CLAUDE.md</strong>
-        <div>
-          <button class="btn-md-edit md-editor-btn" type="button">Edit</button>
+    <details class="claude-md-section md-editor" data-path="${escapeHtml(path)}">
+      <summary>
+        <span class="claude-md-title"><span class="icon">📄</span>Project CLAUDE.md</span>
+        <span style="display:flex; gap:8px; align-items:center;">
+          <button class="btn-md-edit md-editor-btn" type="button" onclick="event.preventDefault();event.stopPropagation();">Edit</button>
+          <span class="chevron" aria-hidden="true">▶</span>
+        </span>
+      </summary>
+      <div class="md-body">
+        <div class="md-view">
+          ${projectMd ? `<div data-md>${escapeHtml(projectMd)}</div>` : `<p style="color:var(--fg-dim); font-size:0.85rem;">No CLAUDE.md at <code>${escapeHtml(path)}</code>. Click Edit to create one.</p>`}
+        </div>
+        <div class="md-edit" style="display:none;">
+          <textarea aria-label="Project CLAUDE.md content">${escapeHtml(content)}</textarea>
+          <div class="actions">
+            <button class="btn-md-save primary" type="button">Save</button>
+            <button class="btn-md-cancel" type="button">Cancel</button>
+            <span style="color:var(--fg-faint); font-size:0.75rem; align-self:center;">A timestamped backup will be created.</span>
+          </div>
         </div>
       </div>
-      <div class="md-view">
-        ${projectMd ? `<div data-md>${escapeHtml(projectMd)}</div>` : `<p style="color:var(--fg-dim); font-size:0.85rem;">No CLAUDE.md at <code>${escapeHtml(path)}</code>. Click Edit to create one.</p>`}
-      </div>
-      <div class="md-edit" style="display:none;">
-        <textarea aria-label="Project CLAUDE.md content">${escapeHtml(content)}</textarea>
-        <div class="actions">
-          <button class="btn-md-save primary" type="button">Save</button>
-          <button class="btn-md-cancel" type="button">Cancel</button>
-          <span style="color:var(--fg-faint); font-size:0.75rem; align-self:center;">A timestamped backup will be created.</span>
-        </div>
-      </div>
-    </div>
+    </details>
   `;
 }
 
@@ -84,9 +87,9 @@ export async function renderProject(escapedPath) {
         <div class="label">Sessions</div>
       </div>
     </div>
-    <h2 style="color:var(--accent); margin-bottom:12px; font-size:1.1rem;">Sessions</h2>
-    ${sessionCards || '<p style="color:var(--fg-dim);">No sessions found.</p>'}
     ${editorHtml}
+    <h2 style="color:var(--accent); margin:18px 0 12px; font-size:1.1rem;">Sessions</h2>
+    ${sessionCards || '<p style="color:var(--fg-dim);">No sessions found.</p>'}
   `;
 
   return layout(realPath, content, {
