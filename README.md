@@ -61,7 +61,7 @@ Archive page (delete & restore):
 npx claude-station
 
 # Or clone & link locally
-git clone https://github.com/<you>/claude-station.git
+git clone https://github.com/DreamFlyCoder/claude-station.git
 cd claude-station
 npm link
 claude-station
@@ -112,7 +112,7 @@ The whole app is ~1500 LOC across 6 view files, 1 scanner, 1 server. Easy to rea
 ## Development
 
 ```bash
-git clone https://github.com/<you>/claude-station.git
+git clone https://github.com/DreamFlyCoder/claude-station.git
 cd claude-station
 
 # Run

@@ -1,7 +1,7 @@
 {
   "name": "claude-station",
   "version": "1.0.0",
-  "description": "Local web dashboard to visualize and manage Claude Code session history",
+  "description": "Local web dashboard to browse, search, edit and resume Claude Code sessions. Zero npm dependencies, zero build step.",
   "type": "module",
   "bin": {
     "claude-station": "./bin/cli.mjs"
@@ -10,5 +10,34 @@
     "start": "node bin/cli.mjs",
     "test": "node --test test/"
   },
-  "license": "MIT"
+  "keywords": [
+    "claude",
+    "claude-code",
+    "dashboard",
+    "cli",
+    "jsonl",
+    "session-history",
+    "resume",
+    "viewer"
+  ],
+  "author": "DreamFlyCoder",
+  "license": "MIT",
+  "homepage": "https://github.com/DreamFlyCoder/claude-station#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DreamFlyCoder/claude-station.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DreamFlyCoder/claude-station/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE"
+  ]
 }

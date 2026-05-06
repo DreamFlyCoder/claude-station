@@ -61,7 +61,7 @@ Archive 页面（删除/恢复/永久删除）：
 npx claude-station
 
 # 或者克隆并 link 到全局
-git clone https://github.com/<你>/claude-station.git
+git clone https://github.com/DreamFlyCoder/claude-station.git
 cd claude-station
 npm link
 claude-station
@@ -112,7 +112,7 @@ claude-station
 ## 本地开发
 
 ```bash
-git clone https://github.com/<你>/claude-station.git
+git clone https://github.com/DreamFlyCoder/claude-station.git
 cd claude-station
 
 # 运行
