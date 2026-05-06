@@ -231,9 +231,40 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
     .main {
       flex: 1;
       min-width: 0;
-      padding: 20px 28px;
-      max-width: 1100px;
+      padding: 20px 32px 80px;
     }
+    .main > * { max-width: 1600px; }
+
+    /* ===== Back to top button ===== */
+    .scroll-top {
+      position: fixed;
+      right: 28px;
+      bottom: 28px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      font-size: 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--shadow-lg, 0 4px 16px rgba(0,0,0,0.25));
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(12px) scale(0.85);
+      transition: opacity 240ms cubic-bezier(0.4,0,0.2,1),
+                  transform 240ms cubic-bezier(0.4,0,0.2,1),
+                  background 200ms;
+      z-index: 50;
+    }
+    .scroll-top.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+    .scroll-top:hover { transform: translateY(-3px) scale(1.06); }
+    .scroll-top:active { transform: translateY(0) scale(0.95); }
 
     /* ===== Top toolbar (theme toggle in sidebar header area) ===== */
     .topbar {
@@ -1114,6 +1145,7 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       ${content}
     </main>
   </div>
+  <button id="scroll-top" class="scroll-top" type="button" aria-label="Back to top" title="Back to top">↑</button>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script>${marked}</script>
   <script>
@@ -1189,6 +1221,16 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       clearTimeout(el._t);
       el._t = setTimeout(() => el.classList.remove('show'), opts.duration || 2000);
     };
+
+    // Back to top
+    (function() {
+      const btn = document.getElementById('scroll-top');
+      if (!btn) return;
+      const onScroll = () => btn.classList.toggle('visible', window.scrollY > 300);
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+      btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    })();
 
     // Tabs (config center)
     (function() {
