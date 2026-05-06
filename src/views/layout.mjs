@@ -737,7 +737,7 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       grid-template-columns: 1fr 1fr;
       gap: 20px;
       margin-bottom: 24px;
-      align-items: start;
+      align-items: stretch;
     }
     @media (max-width: 1024px) {
       .hero-grid { grid-template-columns: 1fr; }
@@ -765,6 +765,7 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       grid-template-columns: 1fr 1fr;
       grid-template-rows: 1fr 1fr;
       gap: 10px;
+      flex: 1;
     }
     .stats-grid .stat-box {
       display: flex;
