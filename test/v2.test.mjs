@@ -67,7 +67,7 @@ describe('searchSessions', () => {
     const out = await searchSessions('');
     assert.deepEqual(out, []);
   });
-  it('returns case-insensitive matches with snippet', async () => {
+  it('returns case-insensitive matches with snippet + matchCount', async () => {
     // Use a token that almost certainly appears in some session.
     const out = await searchSessions('CLAUDE', { limit: 5 });
     assert.ok(Array.isArray(out));
@@ -79,8 +79,47 @@ describe('searchSessions', () => {
       assert.ok(typeof r.snippet.before === 'string');
       assert.ok(typeof r.snippet.hit === 'string');
       assert.ok(typeof r.snippet.after === 'string');
-      // hit should be a case-insensitive match of the query
       assert.equal(r.snippet.hit.toLowerCase(), 'claude');
+      // matchCount should be a positive integer
+      assert.ok(Number.isInteger(r.matchCount));
+      assert.ok(r.matchCount >= 1);
+    }
+  });
+  it('deduplicates per session — sessionIds are unique in results', async () => {
+    const out = await searchSessions('claude', { limit: 100 });
+    const seen = new Set();
+    for (const r of out) {
+      const key = r.escapedPath + '/' + r.sessionId;
+      assert.ok(!seen.has(key), `duplicate session in results: ${key}`);
+      seen.add(key);
+    }
+  });
+  it('respects scope: only returns sessions from the given project', async () => {
+    // Pick one project that has matches.
+    const all = await searchSessions('claude', { limit: 50 });
+    if (all.length === 0) return; // empty dataset
+    const scope = all[0].escapedPath;
+    const scoped = await searchSessions('claude', { limit: 50, scope });
+    assert.ok(scoped.length > 0);
+    for (const r of scoped) {
+      assert.equal(r.escapedPath, scope);
+    }
+  });
+});
+
+describe('readSessionMeta lastTime', () => {
+  it('getSessions returns lastTime alongside startTime', async () => {
+    const { getProjects, getSessions } = await import('../src/scanner.mjs');
+    const ps = await getProjects();
+    if (ps.length === 0) return; // empty dataset
+    const sessions = await getSessions(ps[0].escapedPath);
+    if (sessions.length === 0) return;
+    const s = sessions[0];
+    // Either both present or both null; lastTime ≥ startTime when both set
+    assert.ok('lastTime' in s, 'session must have lastTime field');
+    if (s.startTime && s.lastTime) {
+      assert.ok(new Date(s.lastTime) >= new Date(s.startTime),
+        `lastTime (${s.lastTime}) should be >= startTime (${s.startTime})`);
     }
   });
 });

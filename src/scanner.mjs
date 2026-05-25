@@ -172,6 +172,7 @@ export async function getProjects() {
 export async function readSessionMeta(filePath) {
   let firstPrompt = '';
   let startTime = null;
+  let lastTime = null;
   let messageCount = 0;
   const rl = createInterface({
     input: createReadStream(filePath, { encoding: 'utf-8' }),
@@ -181,7 +182,10 @@ export async function readSessionMeta(filePath) {
     if (!line.trim()) continue;
     let obj;
     try { obj = JSON.parse(line); } catch { continue; }
-    if (!startTime && obj.timestamp) startTime = obj.timestamp;
+    if (obj.timestamp) {
+      if (!startTime) startTime = obj.timestamp;
+      lastTime = obj.timestamp;
+    }
     if (obj.type === 'user' || obj.type === 'assistant') {
       messageCount++;
       if (!firstPrompt && obj.type === 'user') {
@@ -190,7 +194,7 @@ export async function readSessionMeta(filePath) {
       }
     }
   }
-  return { firstPrompt: firstPrompt || '(no prompt)', startTime, messageCount };
+  return { firstPrompt: firstPrompt || '(no prompt)', startTime, lastTime, messageCount };
 }
 
 export async function getSessions(escapedPath) {
@@ -211,12 +215,14 @@ export async function getSessions(escapedPath) {
 
     let firstPrompt = '';
     let startTime = null;
+    let lastTime = null;
     let messageCount = 0;
 
     try {
       const meta = await readSessionMeta(filePath);
       firstPrompt = meta.firstPrompt;
       startTime = meta.startTime;
+      lastTime = meta.lastTime;
       messageCount = meta.messageCount;
 
       const s = await stat(filePath);
@@ -226,16 +232,19 @@ export async function getSessions(escapedPath) {
         firstPrompt: firstPrompt || '(no prompt)',
         messageCount,
         startTime,
+        lastTime,
         fileSize: s.size,
       });
     } catch { /* skip broken files */ }
   }
 
-  // Sort by startTime descending
+  // Sort by lastTime descending (most recently active first); fall back to startTime
   sessions.sort((a, b) => {
-    if (!a.startTime) return 1;
-    if (!b.startTime) return -1;
-    return new Date(b.startTime) - new Date(a.startTime);
+    const aT = a.lastTime || a.startTime;
+    const bT = b.lastTime || b.startTime;
+    if (!aT) return 1;
+    if (!bT) return -1;
+    return new Date(bT) - new Date(aT);
   });
 
   return sessions;
@@ -295,12 +304,13 @@ function extractTextContent(content) {
 // ---------- Full-text search ----------
 
 /**
- * Search across all sessions. Streams jsonl files; matches user/assistant text content
- * case-insensitively. Returns up to `limit` results, sorted by timestamp descending.
+ * Search across sessions (or one project when `scope` is set). Streams jsonl files;
+ * matches user/assistant text content case-insensitively. Returns at most one result
+ * per session — the FIRST hit in that session — and counts the rest in `matchCount`.
  *
- * Each result: { escapedPath, realPath, sessionId, timestamp, snippet, role }
+ * Each result: { escapedPath, realPath, sessionId, timestamp, snippet, role, matchCount }
  */
-export async function searchSessions(query, { limit = 200 } = {}) {
+export async function searchSessions(query, { limit = 200, scope = null } = {}) {
   const q = (query || '').trim().toLowerCase();
   if (!q) return [];
 
@@ -317,6 +327,7 @@ export async function searchSessions(query, { limit = 200 } = {}) {
     if (!entry.isDirectory()) continue;
     if (entry.name.startsWith('.')) continue; // skip .archive
     const escapedPath = entry.name;
+    if (scope && scope !== 'all' && escapedPath !== scope) continue;
     const projectDir = join(PROJECTS_DIR, escapedPath);
 
     let files;
@@ -332,7 +343,9 @@ export async function searchSessions(query, { limit = 200 } = {}) {
     for (const f of jsonlFiles) {
       const filePath = join(projectDir, f);
       const sessionId = f.replace('.jsonl', '');
-      let matchedInThisFile = false;
+      // Per-session: keep only the first hit, but tally total hits in this session.
+      let firstHit = null;
+      let matchCount = 0;
 
       try {
         const rl = createInterface({
@@ -349,42 +362,46 @@ export async function searchSessions(query, { limit = 200 } = {}) {
           const text = extractTextContent(obj.message?.content);
           if (!text) continue;
           const lower = text.toLowerCase();
-          const idx = lower.indexOf(q);
-          if (idx === -1) continue;
+          if (lower.indexOf(q) === -1) continue;
 
-          if (!realPath) {
-            realPath = await getRealPath(escapedPath);
-          }
-
-          // Build snippet: 60 chars before/after, with bounds
-          const start = Math.max(0, idx - 60);
-          const end = Math.min(text.length, idx + q.length + 60);
-          const before = (start > 0 ? '…' : '') + text.slice(start, idx);
-          const hit = text.slice(idx, idx + q.length);
-          const after = text.slice(idx + q.length, end) + (end < text.length ? '…' : '');
-
-          results.push({
-            escapedPath,
-            realPath,
-            sessionId,
-            timestamp: obj.timestamp || null,
-            role: obj.message?.role || obj.type,
-            // Caller is responsible for HTML-escaping `before`/`hit`/`after`.
-            snippet: { before, hit, after },
-          });
-          matchedInThisFile = true;
-          if (results.length >= limit * 3) {
-            // Soft cap: prevent runaway in giant repos. We over-collect so sort still has variety.
-            rl.close();
-            break;
+          // Count every occurrence in this message (not just the first).
+          let from = 0;
+          while (true) {
+            const idx = lower.indexOf(q, from);
+            if (idx === -1) break;
+            matchCount++;
+            if (!firstHit) {
+              const start = Math.max(0, idx - 60);
+              const end = Math.min(text.length, idx + q.length + 60);
+              const before = (start > 0 ? '…' : '') + text.slice(start, idx);
+              const hit = text.slice(idx, idx + q.length);
+              const after = text.slice(idx + q.length, end) + (end < text.length ? '…' : '');
+              firstHit = {
+                timestamp: obj.timestamp || null,
+                role: obj.message?.role || obj.type,
+                snippet: { before, hit, after }, // caller escapes
+              };
+            }
+            from = idx + q.length;
           }
         }
       } catch { /* skip */ }
 
-      if (results.length >= limit * 3) break;
-      void matchedInThisFile;
+      if (firstHit) {
+        if (!realPath) realPath = await getRealPath(escapedPath);
+        results.push({
+          escapedPath,
+          realPath,
+          sessionId,
+          timestamp: firstHit.timestamp,
+          role: firstHit.role,
+          snippet: firstHit.snippet,
+          matchCount,
+        });
+        if (results.length >= limit) break;
+      }
     }
-    if (results.length >= limit * 3) break;
+    if (results.length >= limit) break;
   }
 
   results.sort((a, b) => {

@@ -61,11 +61,16 @@ export async function renderProject(escapedPath) {
   const sessionCards = sessions.map(s => {
     const resumeCmd = `cd ${realPath} && claude --resume ${s.id}`;
     const archiveUrl = `/api/session/${encodeURIComponent(escapedPath)}/${s.id}/archive`;
+    const showLast = s.lastTime && s.lastTime !== s.startTime;
     return `
     <div class="card session-card">
       <a class="card-link" href="/session/${encodeURIComponent(escapedPath)}/${s.id}" aria-label="Open session ${formatTime(s.startTime)}"></a>
       <div class="card-main">
-        <div class="card-title">${formatTime(s.startTime)}</div>
+        <div class="card-title">${formatTime(s.lastTime || s.startTime)}</div>
+        <div class="session-times">
+          <span title="When the first message in this session was recorded">Created <strong>${formatTime(s.startTime)}</strong></span>
+          ${showLast ? `<span class="sep">·</span><span title="Timestamp of the latest message in this session">Last activity <strong>${formatTime(s.lastTime)}</strong></span>` : ''}
+        </div>
         <div class="preview">${escapeHtml(s.firstPrompt)}</div>
         <div class="meta">
           ${s.messageCount} messages &middot; ${formatSize(s.fileSize)}
@@ -89,6 +94,11 @@ export async function renderProject(escapedPath) {
       </div>
     </div>
     ${editorHtml}
+    <form class="project-search" method="GET" action="/search">
+      <input type="search" name="q" placeholder="Search inside this project's sessions..." aria-label="Search this project" />
+      <input type="hidden" name="project" value="${escapeHtml(escapedPath)}" />
+      <button type="submit">Search</button>
+    </form>
     <h2 style="color:var(--accent); margin:18px 0 12px; font-size:1.1rem;">Sessions</h2>
     ${sessionCards || '<p style="color:var(--fg-dim);">No sessions found.</p>'}
   `;

@@ -87,10 +87,11 @@ export function startServer(port, callback) {
         return sendHtml(res, html);
       }
 
-      // GET /search?q=...
+      // GET /search?q=...&project=<escapedPath>|all
       if (method === 'GET' && path === '/search') {
         const q = url.searchParams.get('q') || '';
-        const html = await renderSearch(q);
+        const scope = url.searchParams.get('project') || 'all';
+        const html = await renderSearch(q, scope);
         return sendHtml(res, html);
       }
 

@@ -491,6 +491,16 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       font-weight: 600;
       margin-bottom: 4px;
     }
+    .session-card .session-times {
+      font-size: 0.75rem;
+      color: var(--fg-faint);
+      margin-bottom: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 8px;
+    }
+    .session-card .session-times strong { color: var(--fg-dim); font-weight: 500; }
+    .session-card .session-times .sep { color: var(--fg-very-faint); }
     .session-card .card-actions {
       display: flex;
       gap: 6px;
@@ -1005,6 +1015,71 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
     }
     .search-result .head a { color: var(--accent-link); text-decoration: none; font-weight: 500; }
     .search-result .head a:hover { text-decoration: underline; }
+
+    /* Search scope filter (search page) */
+    .search-scope {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+    .search-scope input[type="search"] {
+      flex: 1; min-width: 240px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-input);
+      color: var(--fg);
+      padding: 10px 14px; border-radius: 8px;
+      font-family: inherit; font-size: 0.95rem; outline: none;
+    }
+    .search-scope select {
+      background: var(--bg-input);
+      border: 1px solid var(--border-input);
+      color: var(--fg);
+      padding: 10px 12px; border-radius: 8px;
+      font-family: inherit; font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .search-scope button {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 10px 16px; border-radius: 8px;
+      font-family: inherit; font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .search-scope button:hover { border-color: var(--accent); color: var(--accent); }
+    .scope-tag { color: var(--fg-muted); }
+
+    /* Project-scoped search form (project page) */
+    .project-search {
+      display: flex; gap: 8px; align-items: center;
+      margin: 14px 0 4px;
+    }
+    .project-search input[type="search"] {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border-input);
+      color: var(--fg);
+      padding: 9px 14px; border-radius: 8px;
+      font-family: inherit; font-size: 0.9rem; outline: none;
+    }
+    .project-search input[type="search"]:focus { border-color: var(--accent); }
+    .project-search button {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 9px 16px; border-radius: 8px;
+      font-family: inherit; font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .project-search button:hover { border-color: var(--accent); color: var(--accent); }
+    .match-count {
+      color: var(--fg-dim);
+      font-size: 0.78rem;
+      background: var(--bg-hover);
+      padding: 1px 6px; border-radius: 4px;
+      margin-left: 4px;
+    }
     .search-result .snippet {
       font-size: 0.85rem;
       color: var(--fg);
