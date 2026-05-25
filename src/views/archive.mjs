@@ -15,7 +15,7 @@ function formatSize(bytes) {
 function formatTime(ts) {
   if (!ts) return 'unknown';
   return new Date(ts).toLocaleString('en-US', {
-    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false
   });
 }
 

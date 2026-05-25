@@ -16,7 +16,7 @@ function formatTime(ts) {
   if (!ts) return 'unknown';
   const d = new Date(ts);
   return d.toLocaleString('en-US', {
-    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false
   });
 }
 
