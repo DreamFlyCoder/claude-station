@@ -1,5 +1,5 @@
 import { layout } from './layout.mjs';
-import { getSessions, getProjectClaudeMd, getRealPath } from '../scanner.mjs';
+import { getSessions, getProjectClaudeMd, getRealPath, getProjectMemory } from '../scanner.mjs';
 import { join } from 'node:path';
 
 function escapeHtml(str) {
@@ -51,12 +51,53 @@ function renderProjectMdEditor(realPath, projectMd) {
   `;
 }
 
+function renderMemorySection(memoryItems) {
+  if (memoryItems.length === 0) {
+    return '';
+  }
+  const items = memoryItems.map(m => {
+    const typeLabel = m.isIndex
+      ? '<span class="mem-tag mem-tag-index">INDEX</span>'
+      : `<span class="mem-tag mem-tag-${escapeHtml(m.type)}">${escapeHtml(m.type)}</span>`;
+    const desc = m.description ? `<div class="mem-desc">${escapeHtml(m.description)}</div>` : '';
+    const sess = m.originSessionId
+      ? `<a class="mem-session-link" href="/session/?${''}"${''}>session ${escapeHtml(m.originSessionId.slice(0, 8))}</a>`
+      : '';
+    return `
+      <details class="mem-item">
+        <summary>
+          ${typeLabel}
+          <span class="mem-name">${escapeHtml(m.name)}</span>
+          <span class="chevron" aria-hidden="true">▶</span>
+        </summary>
+        <div class="mem-body">
+          ${desc}
+          <div class="mem-meta">file: <code>${escapeHtml(m.file)}</code>${sess ? ' · ' + sess : ''}</div>
+          <div data-md class="mem-content">${escapeHtml(m.body)}</div>
+        </div>
+      </details>`;
+  }).join('');
+  return `
+    <details class="claude-md-section">
+      <summary>
+        <span class="claude-md-title"><span class="icon">🧠</span>Project Memory <span class="mem-count">(${memoryItems.length})</span></span>
+        <span class="chevron" aria-hidden="true">▶</span>
+      </summary>
+      <div class="md-body">
+        <div class="mem-list">${items}</div>
+      </div>
+    </details>
+  `;
+}
+
 export async function renderProject(escapedPath) {
   const realPath = await getRealPath(escapedPath);
   const sessions = await getSessions(escapedPath);
   const projectMd = await getProjectClaudeMd(realPath);
+  const memoryItems = await getProjectMemory(escapedPath);
 
   const editorHtml = renderProjectMdEditor(realPath, projectMd);
+  const memoryHtml = renderMemorySection(memoryItems);
 
   const sessionCards = sessions.map(s => {
     const resumeCmd = `cd ${realPath} && claude --resume ${s.id}`;
@@ -94,6 +135,7 @@ export async function renderProject(escapedPath) {
       </div>
     </div>
     ${editorHtml}
+    ${memoryHtml}
     <form class="project-search" method="GET" action="/search">
       <input type="search" name="q" placeholder="Search inside this project's sessions..." aria-label="Search this project" />
       <input type="hidden" name="project" value="${escapeHtml(escapedPath)}" />

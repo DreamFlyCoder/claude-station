@@ -806,3 +806,178 @@ export async function getMcpServers() {
   });
   return { source: CLAUDE_JSON, servers };
 }
+
+// ---------- Project memory ----------
+
+/**
+ * List memory files for a project (auto-memory feature output).
+ * Path: ~/.claude/projects/<escaped>/memory/*.md
+ * Returns [{file, name, description, type, originSessionId, body, isIndex}].
+ * MEMORY.md (the index) is included with isIndex: true.
+ */
+export async function getProjectMemory(escapedPath) {
+  const memDir = join(PROJECTS_DIR, escapedPath, 'memory');
+  let files;
+  try {
+    files = await readdir(memDir);
+  } catch {
+    return [];
+  }
+  const mdFiles = files.filter(f => f.endsWith('.md'));
+  const out = [];
+  for (const f of mdFiles) {
+    const filePath = join(memDir, f);
+    let content;
+    try { content = await readFile(filePath, 'utf-8'); } catch { continue; }
+    const { frontmatter, body } = parseFrontmatter(content);
+    out.push({
+      file: f,
+      name: frontmatter.name || f.replace(/\.md$/, ''),
+      description: frontmatter.description || '',
+      type: frontmatter.type || (f === 'MEMORY.md' ? 'index' : 'unknown'),
+      originSessionId: frontmatter.originSessionId || null,
+      body: body || content,
+      isIndex: f === 'MEMORY.md',
+    });
+  }
+  // Sort: index first, then by type, then by name
+  out.sort((a, b) => {
+    if (a.isIndex !== b.isIndex) return a.isIndex ? -1 : 1;
+    if (a.type !== b.type) return a.type.localeCompare(b.type);
+    return a.name.localeCompare(b.name);
+  });
+  return out;
+}
+
+// ---------- Prompt history ----------
+
+/**
+ * Scan ~/.claude/history.jsonl for prompts the user has typed.
+ * Each line: { display, timestamp(ms), project(realPath), sessionId, pastedContents }
+ *
+ * Options:
+ *   - query: case-insensitive substring filter on display
+ *   - scope: 'all' or an escapedPath (filters by project realPath)
+ *   - limit: max results
+ *
+ * Returns [{ display, timestamp, project, sessionId, escapedPath, snippet }] in time-DESC order.
+ */
+export async function getPromptHistory({ query = '', scope = 'all', limit = 200 } = {}) {
+  const historyFile = join(CLAUDE_DIR, 'history.jsonl');
+  let exists = true;
+  try { await access(historyFile); } catch { exists = false; }
+  if (!exists) return [];
+
+  // Resolve scope to a realPath if not 'all'.
+  let scopeRealPath = null;
+  if (scope && scope !== 'all') {
+    try { scopeRealPath = await getRealPath(scope); } catch { return []; }
+  }
+
+  const q = (query || '').trim().toLowerCase();
+  const out = [];
+  const rl = createInterface({
+    input: createReadStream(historyFile, { encoding: 'utf-8' }),
+    crlfDelay: Infinity,
+  });
+
+  // Map realPath -> escapedPath cache (for cheap UI links).
+  // We could do strict reverse mapping by reading dir entries; for now derive heuristically.
+  const realToEscaped = new Map();
+
+  for await (const line of rl) {
+    if (!line.trim()) continue;
+    let obj;
+    try { obj = JSON.parse(line); } catch { continue; }
+    if (typeof obj.display !== 'string') continue;
+    if (scopeRealPath && obj.project !== scopeRealPath) continue;
+
+    if (q) {
+      const lower = obj.display.toLowerCase();
+      const idx = lower.indexOf(q);
+      if (idx === -1) continue;
+      const start = Math.max(0, idx - 60);
+      const end = Math.min(obj.display.length, idx + q.length + 60);
+      const before = (start > 0 ? '…' : '') + obj.display.slice(start, idx);
+      const hit = obj.display.slice(idx, idx + q.length);
+      const after = obj.display.slice(idx + q.length, end) + (end < obj.display.length ? '…' : '');
+      obj._snippet = { before, hit, after };
+    }
+
+    out.push(obj);
+  }
+
+  // Sort by timestamp DESC and take top `limit`.
+  out.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  const trimmed = out.slice(0, limit);
+
+  // Resolve realPath -> escapedPath by listing PROJECTS_DIR once.
+  if (trimmed.some(o => o.project)) {
+    try {
+      const entries = await readdir(PROJECTS_DIR, { withFileTypes: true });
+      for (const e of entries) {
+        if (!e.isDirectory()) continue;
+        if (e.name.startsWith('.')) continue;
+        const real = await getRealPath(e.name).catch(() => null);
+        if (real) realToEscaped.set(real, e.name);
+      }
+    } catch { /* skip */ }
+  }
+
+  return trimmed.map(o => ({
+    display: o.display,
+    timestamp: o.timestamp,
+    project: o.project,
+    sessionId: o.sessionId,
+    escapedPath: realToEscaped.get(o.project) || null,
+    snippet: o._snippet || null,
+  }));
+}
+
+// ---------- Installed plugins ----------
+
+/**
+ * Read ~/.claude/plugins/installed_plugins.json.
+ * Returns { plugins: [{key, name, marketplace, scope, version, installedAt, lastUpdated, installPath}], marketplaces: [...] }
+ */
+export async function getInstalledPlugins() {
+  const installedFile = join(CLAUDE_DIR, 'plugins', 'installed_plugins.json');
+  const marketsFile = join(CLAUDE_DIR, 'plugins', 'known_marketplaces.json');
+
+  let installed = { version: 0, plugins: {} };
+  try {
+    const raw = await readFile(installedFile, 'utf-8');
+    installed = JSON.parse(raw);
+  } catch { /* missing or invalid */ }
+
+  let markets = {};
+  try {
+    const raw = await readFile(marketsFile, 'utf-8');
+    markets = JSON.parse(raw);
+  } catch { /* skip */ }
+
+  const plugins = [];
+  for (const [key, list] of Object.entries(installed.plugins || {})) {
+    const [name, marketplace] = key.split('@');
+    for (const inst of (Array.isArray(list) ? list : [])) {
+      plugins.push({
+        key,
+        name,
+        marketplace: marketplace || null,
+        scope: inst.scope || 'unknown',
+        version: inst.version || '?',
+        installedAt: inst.installedAt || null,
+        lastUpdated: inst.lastUpdated || null,
+        installPath: inst.installPath || '',
+      });
+    }
+  }
+  plugins.sort((a, b) => a.name.localeCompare(b.name));
+
+  const marketplaces = Object.entries(markets).map(([k, v]) => ({
+    name: k,
+    url: typeof v === 'string' ? v : (v?.url || ''),
+  }));
+
+  return { plugins, marketplaces };
+}

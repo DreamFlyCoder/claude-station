@@ -983,6 +983,78 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       font-weight: 600;
       font-size: 0.9rem;
     }
+    .plugin-ver {
+      color: var(--fg-faint);
+      font-size: 0.78rem;
+      font-weight: 400;
+      margin-left: 6px;
+    }
+
+    /* Project memory section */
+    .mem-list { display: flex; flex-direction: column; gap: 6px; }
+    .mem-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 14px;
+    }
+    .mem-item > summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.88rem;
+    }
+    .mem-item > summary::-webkit-details-marker { display: none; }
+    .mem-item .mem-name { flex: 1; color: var(--fg); font-weight: 500; }
+    .mem-item .chevron {
+      color: var(--fg-faint);
+      font-size: 0.7rem;
+      transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .mem-item[open] .chevron { transform: rotate(90deg); }
+    .mem-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      min-width: 64px;
+      text-align: center;
+    }
+    .mem-tag-reference { background: rgba(123, 140, 222, 0.15); color: #7b8cde; }
+    .mem-tag-user      { background: rgba(102, 187, 106, 0.15); color: #66bb6a; }
+    .mem-tag-feedback  { background: rgba(255, 167, 38, 0.15); color: #ffa726; }
+    .mem-tag-project   { background: rgba(201, 160, 255, 0.18); color: var(--accent); }
+    .mem-tag-index     { background: rgba(102, 102, 102, 0.20); color: var(--fg-muted); }
+    .mem-tag-unknown   { background: rgba(102, 102, 102, 0.12); color: var(--fg-dim); }
+    .mem-body { padding: 10px 0 4px; }
+    .mem-desc { color: var(--fg-muted); font-size: 0.82rem; margin-bottom: 6px; }
+    .mem-meta { color: var(--fg-faint); font-size: 0.72rem; margin-bottom: 8px; }
+    .mem-meta code { color: var(--code-fg); }
+    .mem-content { font-size: 0.88rem; }
+    .mem-count { color: var(--fg-faint); font-weight: 400; font-size: 0.85rem; margin-left: 4px; }
+
+    /* Search mode tabs (Messages vs Prompts) */
+    .search-modes { display: flex; gap: 4px; margin-bottom: 10px; border-bottom: 1px solid var(--border); }
+    .mode-tab {
+      padding: 8px 16px;
+      color: var(--fg-muted);
+      text-decoration: none;
+      font-size: 0.88rem;
+      border-bottom: 2px solid transparent;
+      transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .mode-tab:hover { color: var(--fg); }
+    .mode-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+    .snippet.prompt-text { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.85rem; }
     .config-card .path {
       color: var(--fg-faint);
       font-size: 0.7rem;

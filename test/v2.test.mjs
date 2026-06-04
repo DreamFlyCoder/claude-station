@@ -8,6 +8,7 @@ import {
   searchSessions,
   getStats,
   getCommands, getSkills, getSubagents, getHooks, getMcpServers,
+  getProjectMemory, getPromptHistory, getInstalledPlugins,
 } from '../src/scanner.mjs';
 import { startServer } from '../src/server.mjs';
 import { getProjects } from '../src/scanner.mjs';
@@ -282,6 +283,72 @@ describe('server: claude-md write validation', () => {
     } finally {
       server.close();
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('getProjectMemory', () => {
+  it('returns [] for unknown project', async () => {
+    const out = await getProjectMemory('-no-such-project-xyz');
+    assert.deepEqual(out, []);
+  });
+  it('parses memory files with frontmatter when present', async () => {
+    const ps = await getProjects();
+    let foundWithMemory = false;
+    for (const p of ps) {
+      const mem = await getProjectMemory(p.escapedPath);
+      if (mem.length > 0) {
+        foundWithMemory = true;
+        const m = mem[0];
+        assert.ok('file' in m && 'name' in m && 'type' in m && 'body' in m && 'isIndex' in m);
+        break;
+      }
+    }
+    // If no project has memory, that's fine — empty dataset
+    void foundWithMemory;
+  });
+});
+
+describe('getPromptHistory', () => {
+  it('returns array of prompts in time-DESC order', async () => {
+    const out = await getPromptHistory({ limit: 10 });
+    assert.ok(Array.isArray(out));
+    for (let i = 1; i < out.length; i++) {
+      assert.ok((out[i-1].timestamp || 0) >= (out[i].timestamp || 0),
+        'expected DESC by timestamp');
+    }
+  });
+  it('filters by query (case-insensitive)', async () => {
+    const out = await getPromptHistory({ query: 'claude', limit: 5 });
+    if (out.length > 0) {
+      for (const p of out) {
+        assert.ok(p.display.toLowerCase().includes('claude'));
+        // snippet is built when query is given
+        assert.ok(p.snippet && typeof p.snippet.hit === 'string');
+      }
+    }
+  });
+  it('respects scope: only that project shows up', async () => {
+    const all = await getPromptHistory({ limit: 50 });
+    if (all.length === 0) return;
+    const candidate = all.find(p => p.escapedPath);
+    if (!candidate) return;
+    const scoped = await getPromptHistory({ scope: candidate.escapedPath, limit: 50 });
+    for (const p of scoped) {
+      assert.equal(p.escapedPath, candidate.escapedPath);
+    }
+  });
+});
+
+describe('getInstalledPlugins', () => {
+  it('returns plugins + marketplaces shape', async () => {
+    const out = await getInstalledPlugins();
+    assert.ok(out && typeof out === 'object');
+    assert.ok(Array.isArray(out.plugins));
+    assert.ok(Array.isArray(out.marketplaces));
+    if (out.plugins.length > 0) {
+      const p = out.plugins[0];
+      assert.ok('name' in p && 'version' in p && 'scope' in p && 'installPath' in p);
     }
   });
 });

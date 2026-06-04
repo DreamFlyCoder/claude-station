@@ -87,11 +87,12 @@ export function startServer(port, callback) {
         return sendHtml(res, html);
       }
 
-      // GET /search?q=...&project=<escapedPath>|all
+      // GET /search?q=...&project=<escapedPath>|all&mode=messages|prompts
       if (method === 'GET' && path === '/search') {
         const q = url.searchParams.get('q') || '';
         const scope = url.searchParams.get('project') || 'all';
-        const html = await renderSearch(q, scope);
+        const mode = url.searchParams.get('mode') || 'messages';
+        const html = await renderSearch(q, scope, mode);
         return sendHtml(res, html);
       }
 

@@ -1,7 +1,17 @@
 import { layout } from './layout.mjs';
 import {
-  getCommands, getSubagents, getSkills, getHooks, getMcpServers,
+  getCommands, getSubagents, getSkills, getHooks, getMcpServers, getInstalledPlugins,
 } from '../scanner.mjs';
+
+function formatPluginDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleString('en-US', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  });
+}
 
 function escapeHtml(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -26,13 +36,15 @@ function renderCard(item) {
 }
 
 export async function renderConfig() {
-  const [commands, subagents, skills, hooks, mcp] = await Promise.all([
+  const [commands, subagents, skills, hooks, mcp, pluginsData] = await Promise.all([
     getCommands(),
     getSubagents(),
     getSkills(),
     getHooks(),
     getMcpServers(),
+    getInstalledPlugins(),
   ]);
+  const plugins = pluginsData.plugins;
 
   const commandsHtml = commands.length ? commands.map(renderCard).join('') : emptyState('commands');
   const subagentsHtml = subagents.length ? subagents.map(renderCard).join('') : emptyState('subagents');
@@ -63,6 +75,20 @@ export async function renderConfig() {
       `).join('')
     : `<p style="color:var(--fg-dim); font-size:0.85rem;">No MCP servers in <code>${escapeHtml(mcp.source)}</code>.</p>`;
 
+  const pluginsHtml = plugins.length
+    ? plugins.map(p => `
+        <div class="config-card">
+          <div class="name">${escapeHtml(p.name)} <span class="plugin-ver">v${escapeHtml(p.version)}</span></div>
+          <div class="path">${escapeHtml(p.marketplace || '?')} · scope: ${escapeHtml(p.scope)}</div>
+          <div class="desc">
+            installed ${escapeHtml(formatPluginDate(p.installedAt) || '?')}
+            ${p.lastUpdated && p.lastUpdated !== p.installedAt ? ` · updated ${escapeHtml(formatPluginDate(p.lastUpdated))}` : ''}
+            <br><code>${escapeHtml(p.installPath)}</code>
+          </div>
+        </div>
+      `).join('')
+    : `<p style="color:var(--fg-dim); font-size:0.85rem;">No plugins installed.</p>`;
+
   const content = `
     <h2 style="color:var(--accent); margin-bottom:8px; font-size:1.1rem;">Config Center</h2>
     <p style="color:var(--fg-dim); font-size:0.85rem; margin-bottom:16px;">
@@ -75,12 +101,14 @@ export async function renderConfig() {
         <button class="tab-btn" data-tab="skills">Skills (${skills.length})</button>
         <button class="tab-btn" data-tab="hooks">Hooks (${hooks.groups.length})</button>
         <button class="tab-btn" data-tab="mcp">MCP Servers (${mcp.servers.length})</button>
+        <button class="tab-btn" data-tab="plugins">Plugins (${plugins.length})</button>
       </div>
       <div class="tab-panel active" data-tab="commands">${commandsHtml}</div>
       <div class="tab-panel" data-tab="subagents">${subagentsHtml}</div>
       <div class="tab-panel" data-tab="skills">${skillsHtml}</div>
       <div class="tab-panel" data-tab="hooks">${hooksHtml}</div>
       <div class="tab-panel" data-tab="mcp">${mcpHtml}</div>
+      <div class="tab-panel" data-tab="plugins">${pluginsHtml}</div>
     </div>
   `;
 
