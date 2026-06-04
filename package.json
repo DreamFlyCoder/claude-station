@@ -1,6 +1,6 @@
 {
   "name": "claude-station",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Local web dashboard to browse, search, edit and resume Claude Code sessions. Zero npm dependencies, zero build step.",
   "type": "module",
   "bin": {
