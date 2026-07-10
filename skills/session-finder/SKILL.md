@@ -17,6 +17,7 @@ description: 用自然语言描述历史 Claude Code 会话的内容/脉络，�
 
 1. 列出待索引会话：
    `python3 <skill>/scripts/scan.py > /tmp/sf_todo.json`
+   `scan.py` 无参数时默认扫描 `~/.claude/projects/` 并与 `~/.claude/session-index.json` 做差量，只传 dry-run 或测试时才显式指定 `[projects_dir] [index_path]` 参数覆盖默认值。
    读 `/tmp/sf_todo.json`，得到待办数组（每项含 sessionId/path/cwd/aiTitle/startedAt/messageCount/sourceMtime）。若为空，告诉用户"索引已是最新"，结束。
 
 2. 对每个待办会话取蒸馏文本：`python3 <skill>/scripts/distill.py <path>` 得到含 `text` 的 JSON。
@@ -29,7 +30,7 @@ description: 用自然语言描述历史 Claude Code 会话的内容/脉络，�
 
    摘要要点：抓住**用户意图的推进过程**（例："先请 agent 讲 mbo/mmm 逻辑 → 复用讲解给自定义看板加数据集 → 再复用逻辑加 ltv 数据集"），不要只写开头。
 
-4. 收齐所有 subagent 产出的条目，为每条补上 scan 给的 `cwd/startedAt/messageCount/sourceMtime`（按 sessionId 对齐），写到 `/tmp/sf_entries.json`（数组）。
+4. 收齐所有 subagent 产出的条目，为每条补上 scan 给的 `cwd/startedAt/messageCount/sourceMtime`（按 sessionId 对齐），写到 `/tmp/sf_entries.json`（数组）。每个条目必须包含 subagent 的 4 字段加 scan 的 4 个元数据，即：`{"sessionId","title","summary","topics", "cwd","startedAt","messageCount","sourceMtime"}`；`merge.py` 后续会自己衍生 `resume` 和 `indexedAt`，条目中无需包含这两个。
 
 5. 合并进索引：`python3 <skill>/scripts/merge.py ~/.claude/session-index.json /tmp/sf_entries.json`。
 
