@@ -60,8 +60,10 @@
 ## 组件拆分（各自单一职责、可独立测试）
 
 1. **distiller（纯函数，无 AI）** — `jsonl 文件路径 → 蒸馏文本 + 元数据(cwd/mtime/messageCount/aiTitle/startedAt)`。
-   - 语言：Node，零依赖（与 claude-station 一致，便于阶段2 直接并入 station 的 `src/`）。
+   - 语言：Python，自包含在 skill 内（已有跑通的原型）。
    - 职责边界：只做机械抽取与降噪，不含任何模型调用；输入一个文件，输出确定结果，纯函数好测。
+
+> **skill ↔ station 的接缝是索引文件，不是代码。** skill 只负责**写** `~/.claude/session-index.json`；station 阶段2 只负责**读**它。两者靠这个 JSON 字段契约对接，不共享任何代码——station 已有自己的 `src/scanner.mjs`，真需要蒸馏时复用它即可，不 import skill 的 distiller。因此 distiller 用什么语言纯属 skill 内部实现，需要保持稳定的只有**索引文件的字段格式**。
 
 2. **backfill（skill 命令）** — 建/更新索引。
    - 扫 `~/.claude/projects/**/*.jsonl` → 与现有 index 做 diff（按 sessionId + sourceMtime）→ 只处理"没索引过 / mtime 变了"的会话。
@@ -75,7 +77,7 @@
 
 4. **hook（阶段2）** — SessionEnd/Stop 时把刚结束的会话增量索引进去，保持新鲜、零手动。
 
-5. **station 展示页（阶段2）** — 读同一个 index.json，列表 + 主题词/关键词过滤 + resume 按钮，纯展示无 AI；distiller 从 skill 抽出并入 station `src/` 共用。
+5. **station 展示页（阶段2）** — 读同一个 index.json，列表 + 主题词/关键词过滤 + resume 按钮，纯展示无 AI。station 不 import skill 代码；若需自行蒸馏则复用现成的 `src/scanner.mjs`。
 
 ## 分阶段交付
 
