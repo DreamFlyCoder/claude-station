@@ -1,4 +1,4 @@
-import sys, os, json, datetime
+import sys, os, json, datetime, shlex
 
 def merge_entries(index_path, new_entries, now_iso):
     existing = []
@@ -21,7 +21,7 @@ def merge_entries(index_path, new_entries, now_iso):
             "messageCount": e.get("messageCount", 0),
             "sourceMtime": e.get("sourceMtime"),
             "indexedAt": now_iso,
-            "resume": f"cd {cwd} && claude --resume {sid}",
+            "resume": f"cd {shlex.quote(cwd)} && claude --resume {sid}",
         }
     merged = list(by_id.values())
     tmp = index_path + ".tmp"

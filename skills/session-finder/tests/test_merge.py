@@ -34,5 +34,13 @@ class TestMerge(unittest.TestCase):
         data = json.load(open(self.index, encoding="utf-8"))
         self.assertEqual({e["sessionId"] for e in data}, {"s1", "s2"})
 
+    def test_resume_shell_quotes_cwd(self):
+        entry = {"sessionId": "s1", "cwd": "/Users/x/My Project", "title": "T1", "summary": "s",
+                 "topics": ["t"], "startedAt": "2026-06-01T00:00:00.000Z",
+                 "messageCount": 3, "sourceMtime": 111}
+        merge_entries(self.index, [entry], "2026-07-10T00:00:00Z")
+        data = json.load(open(self.index, encoding="utf-8"))
+        self.assertEqual(data[0]["resume"], "cd '/Users/x/My Project' && claude --resume s1")
+
 if __name__ == "__main__":
     unittest.main()
