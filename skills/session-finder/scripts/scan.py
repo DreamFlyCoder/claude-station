@@ -42,6 +42,8 @@ def find_todo(projects_dir, index_path):
     index = _load_index(index_path)
     todo = []
     for path in glob.glob(os.path.join(projects_dir, "**", "*.jsonl"), recursive=True):
+        if os.path.basename(path).startswith("agent-"):
+            continue
         m = _meta(path)
         prev = index.get(m["sessionId"])
         if prev is None or prev.get("sourceMtime") != m["sourceMtime"]:

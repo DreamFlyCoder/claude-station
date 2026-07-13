@@ -49,5 +49,22 @@ class TestScan(unittest.TestCase):
         self.assertEqual(realname_entries[0]["sessionId"], "realname")
         self.assertNotEqual(realname_entries[0]["sessionId"], "different-id")
 
+    def test_skips_agent_subagent_files(self):
+        proj_dir = os.path.join(self.dir, "projects", "-p")
+        os.makedirs(proj_dir, exist_ok=True)
+        # 真实 session 文件
+        real_path = os.path.join(proj_dir, "realsess.jsonl")
+        with open(real_path, "w", encoding="utf-8") as f:
+            f.write('{"type":"user","cwd":"/real","timestamp":"2026-06-01T00:00:00.000Z","message":{"role":"user","content":"hello"}}\n')
+        # subagent 转录文件（应被跳过）
+        agent_path = os.path.join(proj_dir, "agent-abc123.jsonl")
+        with open(agent_path, "w", encoding="utf-8") as f:
+            f.write('{"type":"user","cwd":"/agent","timestamp":"2026-06-01T00:00:00.000Z","message":{"role":"user","content":"subagent"}}\n')
+        index_path = os.path.join(self.dir, "index3.json")
+        results = find_todo(os.path.join(self.dir, "projects"), index_path)
+        session_ids = [e["sessionId"] for e in results]
+        self.assertIn("realsess", session_ids)
+        self.assertNotIn("agent-abc123", session_ids)
+
 if __name__ == "__main__":
     unittest.main()
