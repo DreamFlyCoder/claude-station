@@ -17,20 +17,20 @@ description: 用自然语言描述历史 Claude Code 会话的内容/脉络，�
 
 1. 列出待索引会话：
    `python3 <skill>/scripts/scan.py > /tmp/sf_todo.json`
-   `scan.py` 无参数时默认扫描 `~/.claude/projects/` 并与 `~/.claude/session-index.json` 做差量，只传 dry-run 或测试时才显式指定 `[projects_dir] [index_path]` 参数覆盖默认值。
+   `scan.py` 无参数时默认扫描 `~/.claude/projects/` 并与 `~/.claude/session-index.json` 做差量，只传 dry-run 或测试时才显式指定 `[projects_dir] [index_path]` 参数覆盖默认值。scan 已自动跳过 `agent-*.jsonl`（子代理转录，不是可 resume 的真实会话）。
    读 `/tmp/sf_todo.json`，得到待办数组（每项含 sessionId/path/cwd/aiTitle/startedAt/messageCount/sourceMtime）。若为空，告诉用户"索引已是最新"，结束。
 
-2. 对每个待办会话取蒸馏文本：`python3 <skill>/scripts/distill.py <path>` 得到含 `text` 的 JSON。
+2. 对每个待办会话取蒸馏文本：`python3 <skill>/scripts/distill.py <path>` 得到含 `text` 的 JSON。给待办数组里的每个会话分配一个从 0 递增的整数 `idx`（下一步靠它对齐身份）。
 
-3. **分批派 subagent 生成摘要**（这是耗 token 的一步，务必并行）。把待办按累计 `text` 大小分批，每批 ≤ ~15 个会话且累计字符 ≤ ~40KB；蒸馏后 >50KB 的大会话单独成批。对每批 spawn 一个 subagent，喂入该批各会话的 `sessionId + 蒸馏 text`，要求它对**每个**会话按下面 schema 产出一条：
+3. **分批派 subagent 生成摘要**（这是耗 token 的一步，务必并行）。把待办按累计 `text` 大小分批，每批 ≤ ~15 个会话且累计字符 ≤ ~80KB；蒸馏后 >80KB 的大会话单独成批。对每批 spawn 一个 subagent，只喂入该批各会话的 `{idx, text}`（**绝不让 subagent 接触或抄写 sessionId**——实践证明它在一批里会把同一个 id 抄给多条，导致索引塌缩）。要求它对**每个**会话按下面 schema 产出一条，`idx` 原样回传：
 
    ```json
-   {"sessionId":"...","title":"简短中文标题(可参考已有 aiTitle 但用中文重述)","summary":"3-5句，必须描述会话的演进弧线：先做了什么→接着→再→最后","topics":["主题词","涉及的仓/功能","关键名词"]}
+   {"idx": <原样回传的整数>, "title":"简短中文标题(可参考已有 aiTitle 但用中文重述)","summary":"3-5句，必须描述会话的演进弧线：先做了什么→接着→再→最后","topics":["主题词","涉及的仓/功能","关键名词"]}
    ```
 
-   摘要要点：抓住**用户意图的推进过程**（例："先请 agent 讲 mbo/mmm 逻辑 → 复用讲解给自定义看板加数据集 → 再复用逻辑加 ltv 数据集"），不要只写开头。
+   摘要要点：抓住**用户意图的推进过程**（例："先请 agent 讲 mbo/mmm 逻辑 → 复用讲解给自定义看板加数据集 → 再复用逻辑加 ltv 数据集"），不要只写开头。要求 subagent 写文件后用 JSON 解析器自校验（曾多次写出非法 JSON）。
 
-4. 收齐所有 subagent 产出的条目，为每条补上 scan 给的 `cwd/startedAt/messageCount/sourceMtime`（按 sessionId 对齐），写到 `/tmp/sf_entries.json`（数组）。每个条目必须包含 subagent 的 4 字段加 scan 的 4 个元数据，即：`{"sessionId","title","summary","topics", "cwd","startedAt","messageCount","sourceMtime"}`；`merge.py` 后续会自己衍生 `resume` 和 `indexedAt`，条目中无需包含这两个。
+4. 收齐所有 subagent 产出的条目，**按 `idx` 从第 1 步的待办数组回取身份与元数据**（sessionId/cwd/startedAt/messageCount/sourceMtime 全部来自 scan，不信任 subagent 的任何身份字段），组装成 `/tmp/sf_entries.json`（数组）。每个条目形如：`{"sessionId","title","summary","topics","cwd","startedAt","messageCount","sourceMtime"}`；`merge.py` 后续会自己衍生 `resume` 和 `indexedAt`，条目中无需包含这两个。
 
 5. 合并进索引：`python3 <skill>/scripts/merge.py ~/.claude/session-index.json /tmp/sf_entries.json`。
 
