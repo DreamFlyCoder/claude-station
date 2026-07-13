@@ -24,8 +24,6 @@ def _meta(path):
                 d = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            if d.get("sessionId"):
-                session_id = d["sessionId"]
             if cwd is None and d.get("cwd"):
                 cwd = d["cwd"]
             if started_at is None and d.get("timestamp"):

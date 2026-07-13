@@ -3,3 +3,4 @@
 {"type":"user","sessionId":"test-sess-1","timestamp":"2026-06-01T10:00:10.000Z","message":{"role":"user","content":[{"type":"tool_result","content":"NOISE_TOOL_RESULT"}]}}
 {"type":"ai-title","sessionId":"test-sess-1","aiTitle":"MBO logic explained"}
 {"type":"attachment","sessionId":"test-sess-1","attachment":{"data":"NOISE_BASE64"}}
+{"type":"user","sessionId":"sidechain-OTHER-id","cwd":"/Users/x/proj","timestamp":"2026-06-01T10:00:20.000Z","message":{"role":"user","content":"[sidechain noise]"}}
