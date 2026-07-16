@@ -54,6 +54,9 @@ describe('renderSessionCards', () => {
     assert.match(html, /btn-resume/);
     assert.match(html, /data-cmd="cd \/Users\/x\/proj &amp;&amp; claude --resume s1"/);
     assert.match(html, /data-blob=/);
+    // blob 是过滤的数据源，须含小写化的 title/summary/topics 文本
+    assert.match(html, /data-blob="[^"]*ltv[^"]*"/);
+    assert.match(html, /data-blob="[^"]*加 ltv 数据集[^"]*"/);
   });
 
   it('renders empty-state message for empty array', () => {
