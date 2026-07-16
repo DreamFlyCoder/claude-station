@@ -36,7 +36,7 @@ function shortName(realPath) {
   return b || realPath;
 }
 
-function renderSidebar(projects, activeEscapedPath, isHome, isConfig, isArchive) {
+function renderSidebar(projects, activeEscapedPath, isHome, isConfig, isArchive, isSessions) {
   const items = projects.map(p => {
     const isActive = p.escapedPath === activeEscapedPath;
     const name = shortName(p.realPath);
@@ -61,6 +61,7 @@ function renderSidebar(projects, activeEscapedPath, isHome, isConfig, isArchive)
       <a class="sb-global${isHome ? ' active' : ''}" href="/">🌐 Global CLAUDE.md</a>
       <a class="sb-global${isConfig ? ' active' : ''}" href="/config">⚙️ Config Center</a>
       <a class="sb-global${isArchive ? ' active' : ''}" href="/archive">🗂 Archive (deleted)</a>
+      <a class="sb-global${isSessions ? ' active' : ''}" href="/sessions">🔎 Session Finder</a>
     </div>
   </div>`;
 }
@@ -74,7 +75,7 @@ function renderSidebar(projects, activeEscapedPath, isHome, isConfig, isArchive)
  * @param {boolean} [opts.isHome] — true when rendering the home page
  * @param {boolean} [opts.isConfig] — true when rendering the config center
  */
-export async function layout(title, content, { breadcrumbs = [], activeEscapedPath = null, isHome = false, isConfig = false, isArchive = false } = {}) {
+export async function layout(title, content, { breadcrumbs = [], activeEscapedPath = null, isHome = false, isConfig = false, isArchive = false, isSessions = false } = {}) {
   const marked = await getMarkedJs();
   const projects = await getProjects();
 
@@ -86,7 +87,7 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       ).join('')}</nav>`
     : '';
 
-  const sidebarHtml = renderSidebar(projects, activeEscapedPath, isHome, isConfig, isArchive);
+  const sidebarHtml = renderSidebar(projects, activeEscapedPath, isHome, isConfig, isArchive, isSessions);
 
   return `<!DOCTYPE html>
 <html lang="en" data-theme="dark">
@@ -1067,6 +1068,53 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       margin-top: 6px;
       line-height: 1.5;
     }
+
+    /* ===== Session Finder page ===== */
+    .sf-filter {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-input);
+      color: var(--fg);
+      padding: 11px 16px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      outline: none;
+      margin-bottom: 16px;
+      transition: border-color 0.15s;
+    }
+    .sf-filter:focus { border-color: var(--accent); }
+    .sf-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow-sm);
+      transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .sf-card:hover {
+      border-color: var(--accent);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    .sf-main { flex: 1; min-width: 0; }
+    .sf-title { color: var(--accent); font-weight: 600; margin-bottom: 4px; }
+    .sf-summary { font-size: 0.85rem; color: var(--fg-muted); line-height: 1.5; margin-bottom: 8px; }
+    .sf-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+    .topic-chip {
+      background: var(--bg-hover);
+      color: var(--fg-dim);
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .sf-meta { font-size: 0.75rem; color: var(--fg-faint); }
+    .sf-actions { flex-shrink: 0; }
 
     /* ===== Search results ===== */
     .search-result {
