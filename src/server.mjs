@@ -6,6 +6,7 @@ import { renderSession } from './views/session.mjs';
 import { renderSearch } from './views/search.mjs';
 import { renderConfig } from './views/config.mjs';
 import { renderArchive } from './views/archive.mjs';
+import { renderSessions } from './views/sessions.mjs';
 import {
   getSessionMessages, getRealPath,
   archiveSession, saveClaudeMd,
@@ -105,6 +106,12 @@ export function startServer(port, callback) {
       // GET /archive
       if (method === 'GET' && path === '/archive') {
         const html = await renderArchive();
+        return sendHtml(res, html);
+      }
+
+      // GET /sessions — Session Finder (browse session-index.json)
+      if (method === 'GET' && path === '/sessions') {
+        const html = await renderSessions();
         return sendHtml(res, html);
       }
 

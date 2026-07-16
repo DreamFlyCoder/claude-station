@@ -13,11 +13,12 @@ const AGENTS_DIR = join(CLAUDE_DIR, 'agents');
 const SKILLS_DIR = join(CLAUDE_DIR, 'skills');
 const SETTINGS_FILE = join(CLAUDE_DIR, 'settings.json');
 const CLAUDE_JSON = join(HOME, '.claude.json');
+const SESSION_INDEX_FILE = join(CLAUDE_DIR, 'session-index.json');
 
 export const PATHS = {
   HOME, CLAUDE_DIR, PROJECTS_DIR, ARCHIVE_DIR,
   COMMANDS_DIR, AGENTS_DIR, SKILLS_DIR,
-  SETTINGS_FILE, CLAUDE_JSON,
+  SETTINGS_FILE, CLAUDE_JSON, SESSION_INDEX_FILE,
 };
 
 /**
@@ -980,4 +981,20 @@ export async function getInstalledPlugins() {
   }));
 
   return { plugins, marketplaces };
+}
+
+/**
+ * Read the session-finder index (~/.claude/session-index.json).
+ * Returns [] on any problem (missing/unreadable/bad JSON/not an array) — never throws.
+ * @param {string} [indexPath] override for testing
+ * @returns {Promise<Array>}
+ */
+export async function readSessionIndex(indexPath = SESSION_INDEX_FILE) {
+  try {
+    const raw = await readFile(indexPath, 'utf-8');
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
 }
