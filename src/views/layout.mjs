@@ -1131,6 +1131,14 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       padding: 12px 16px;
       margin-bottom: 10px;
     }
+    /* Whole-card clickable search result: stretched link opens the session viewer;
+       the project link stays separately clickable on top. */
+    .search-result.clickable { position: relative; cursor: pointer; transition: border-color 200ms cubic-bezier(0.4,0,0.2,1); }
+    .search-result.clickable:hover { border-color: var(--accent); }
+    .search-result .card-link { position: absolute; inset: 0; z-index: 0; border-radius: inherit; text-decoration: none; }
+    .search-result.clickable .head,
+    .search-result.clickable .snippet { position: relative; pointer-events: none; }
+    .search-result.clickable .head .proj-link { pointer-events: auto; position: relative; z-index: 1; }
     .search-result .head {
       display: flex;
       justify-content: space-between;
