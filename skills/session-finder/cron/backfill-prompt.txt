@@ -1,0 +1,9 @@
+你是无人值守的定时任务，只做一件事：session-finder 增量索引。严格按步骤，不做任何其他事，不要 spawn 子 agent，不要读写下列之外的文件。
+
+1. 运行：python3 /Users/luguotao/.claude/skills/session-finder/scripts/scan.py > /tmp/sf_cron_todo.json
+2. 读 /tmp/sf_cron_todo.json（数组，每项含 sessionId/path/cwd/startedAt/messageCount/sourceMtime）。若为空数组，输出「无待索引」并结束。
+3. 最多处理前 40 条。对每条的 path 运行：python3 /Users/luguotao/.claude/skills/session-finder/scripts/distill.py "<path>"，得到含 text 的 JSON。
+4. 为每条构造一个条目对象：{"sessionId","title"(简短中文标题),"summary"(3-5句中文，描述会话演进弧线：先做什么→接着→再→最后),"topics":[主题词...],"cwd","startedAt","messageCount","sourceMtime"}。其中 cwd/startedAt/messageCount/sourceMtime 从该条 todo 原样带过，sessionId 也用 todo 里的，绝不改动。
+5. 把所有条目组成 JSON 数组写到 /tmp/sf_cron_entries.json（真实中文，非 \u 转义）。
+6. 运行：python3 /Users/luguotao/.claude/skills/session-finder/scripts/merge.py /Users/luguotao/.claude/session-index.json /tmp/sf_cron_entries.json
+7. 输出「新增/更新 N 条，索引共 M 条」，结束。
