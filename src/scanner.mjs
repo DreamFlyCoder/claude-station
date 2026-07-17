@@ -998,3 +998,34 @@ export async function readSessionIndex(indexPath = SESSION_INDEX_FILE) {
     return [];
   }
 }
+
+/**
+ * Build a sessionId -> escapedPath map by scanning the project dirs under
+ * ~/.claude/projects/ for <sessionId>.jsonl files. Used to link a session-index
+ * entry (which stores sessionId but not the project dir) to the session viewer
+ * route /session/:escapedPath/:sessionId. Skips the .archive dir. Never throws.
+ * @param {string} [projectsDir] override for testing
+ * @returns {Promise<Record<string,string>>}
+ */
+export async function getSessionLocationMap(projectsDir = PROJECTS_DIR) {
+  const map = {};
+  let dirents;
+  try {
+    dirents = await readdir(projectsDir, { withFileTypes: true });
+  } catch {
+    return map;
+  }
+  for (const d of dirents) {
+    if (!d.isDirectory() || d.name === '.archive') continue;
+    let files;
+    try {
+      files = await readdir(join(projectsDir, d.name));
+    } catch {
+      continue;
+    }
+    for (const f of files) {
+      if (f.endsWith('.jsonl')) map[f.slice(0, -6)] = d.name;
+    }
+  }
+  return map;
+}
