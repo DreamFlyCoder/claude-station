@@ -26,9 +26,10 @@ function renderMessagesResults(results, query) {
       ? ` <span class="match-count">+${r.matchCount - 1} more match${r.matchCount - 1 === 1 ? '' : 'es'} in this session</span>`
       : '';
     return `
-    <div class="search-result">
+    <div class="search-result clickable">
+      <a class="card-link" href="${sessionUrl}" aria-label="Open session ${r.sessionId.slice(0, 8)}"></a>
       <div class="head">
-        <span><a href="${projectUrl}">${escapeHtml(r.realPath || r.escapedPath)}</a> &middot; <a href="${sessionUrl}">session ${r.sessionId.slice(0, 8)}</a> &middot; ${escapeHtml(r.role)}${more}</span>
+        <span><a class="proj-link" href="${projectUrl}">${escapeHtml(r.realPath || r.escapedPath)}</a> &middot; session ${r.sessionId.slice(0, 8)} &middot; ${escapeHtml(r.role)}${more}</span>
         <span>${escapeHtml(formatTime(r.timestamp))}</span>
       </div>
       <div class="snippet">${escapeHtml(r.snippet.before)}<mark>${escapeHtml(r.snippet.hit)}</mark>${escapeHtml(r.snippet.after)}</div>
@@ -41,19 +42,24 @@ function renderPromptResults(results, query) {
     return `<p style="color:var(--fg-dim);">No prompts match <code>${escapeHtml(query)}</code>.</p>`;
   }
   return results.map(p => {
-    const sessionLink = p.escapedPath && p.sessionId
-      ? `<a href="/session/${encodeURIComponent(p.escapedPath)}/${p.sessionId}">session ${p.sessionId.slice(0, 8)}</a>`
-      : `<span class="muted">${escapeHtml(p.sessionId ? p.sessionId.slice(0, 8) : 'unknown')}</span>`;
+    const clickable = !!(p.escapedPath && p.sessionId);
+    const cardLink = clickable
+      ? `<a class="card-link" href="/session/${encodeURIComponent(p.escapedPath)}/${p.sessionId}" aria-label="Open session ${p.sessionId.slice(0, 8)}"></a>`
+      : '';
+    const sessionLabel = p.sessionId
+      ? `session ${escapeHtml(p.sessionId.slice(0, 8))}`
+      : `<span class="muted">unknown</span>`;
     const projectLink = p.escapedPath
-      ? `<a href="/project/${encodeURIComponent(p.escapedPath)}">${escapeHtml(basename(p.project) || p.project)}</a>`
+      ? `<a class="proj-link" href="/project/${encodeURIComponent(p.escapedPath)}">${escapeHtml(basename(p.project) || p.project)}</a>`
       : `<span class="muted">${escapeHtml(p.project || 'unknown')}</span>`;
     const displayHtml = p.snippet
       ? escapeHtml(p.snippet.before) + `<mark>${escapeHtml(p.snippet.hit)}</mark>` + escapeHtml(p.snippet.after)
       : escapeHtml(p.display.slice(0, 200) + (p.display.length > 200 ? '…' : ''));
     return `
-    <div class="search-result">
+    <div class="search-result${clickable ? ' clickable' : ''}">
+      ${cardLink}
       <div class="head">
-        <span>${projectLink} &middot; ${sessionLink}</span>
+        <span>${projectLink} &middot; ${sessionLabel}</span>
         <span>${escapeHtml(formatTime(p.timestamp))}</span>
       </div>
       <div class="snippet prompt-text">${displayHtml}</div>
