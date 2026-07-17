@@ -1,9 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFile, mkdtemp, rm } from 'node:fs/promises';
+import { writeFile, mkdtemp, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { readSessionIndex } from '../src/scanner.mjs';
+import { readSessionIndex, getSessionLocationMap } from '../src/scanner.mjs';
 import { renderSessionCards } from '../src/views/sessions.mjs';
 
 describe('readSessionIndex', () => {
@@ -63,5 +63,38 @@ describe('renderSessionCards', () => {
     const html = renderSessionCards([]);
     assert.match(html, /更新会话索引/);
     assert.doesNotMatch(html, /sf-card/);
+  });
+
+  it('makes a card clickable to the session viewer when its location is known', () => {
+    const html = renderSessionCards(sample, { s1: '-Users-x-proj' });
+    assert.match(html, /class="sf-card clickable"/);
+    assert.match(html, /<a class="card-link" href="\/session\/-Users-x-proj\/s1" target="_blank"/);
+  });
+
+  it('leaves a card non-clickable when its location is unknown', () => {
+    const html = renderSessionCards(sample, {});
+    assert.doesNotMatch(html, /card-link/);
+    assert.doesNotMatch(html, /sf-card clickable/);
+  });
+});
+
+describe('getSessionLocationMap', () => {
+  it('maps sessionId -> project dir and skips .archive', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'sf-loc-'));
+    await mkdir(join(dir, '-proj-a'));
+    await mkdir(join(dir, '-proj-b'));
+    await mkdir(join(dir, '.archive'));
+    await writeFile(join(dir, '-proj-a', 'sess1.jsonl'), '');
+    await writeFile(join(dir, '-proj-b', 'sess2.jsonl'), '');
+    await writeFile(join(dir, '.archive', 'sess3.jsonl'), '');
+    const map = await getSessionLocationMap(dir);
+    assert.equal(map.sess1, '-proj-a');
+    assert.equal(map.sess2, '-proj-b');
+    assert.equal(map.sess3, undefined);
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it('returns {} when projects dir is missing', async () => {
+    assert.deepEqual(await getSessionLocationMap('/nonexistent/nope-projects'), {});
   });
 });

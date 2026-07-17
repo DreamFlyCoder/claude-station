@@ -1,6 +1,6 @@
 import { basename } from 'node:path';
 import { layout } from './layout.mjs';
-import { readSessionIndex } from '../scanner.mjs';
+import { readSessionIndex, getSessionLocationMap } from '../scanner.mjs';
 
 function escapeHtml(str) {
   return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -13,7 +13,7 @@ function formatDate(ts) {
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-export function renderSessionCards(entries) {
+export function renderSessionCards(entries, locMap = {}) {
   if (!entries || entries.length === 0) {
     return `<h2 style="color:var(--accent); margin-bottom:8px; font-size:1.1rem;">Session Finder</h2>
       <p style="color:var(--fg-dim);">还没建索引。在 Claude Code 里说「更新会话索引」先跑一次 backfill（session-finder skill），再回来刷新本页。</p>`;
@@ -36,7 +36,12 @@ export function renderSessionCards(entries) {
     const resumeBtn = e.resume
       ? `<div class="resume-wrap"><button class="btn-resume" data-cmd="${escapeHtml(e.resume)}">▶ Resume</button><span class="tip">复制 resume 命令</span></div>`
       : '';
-    return `<div class="sf-card" data-blob="${blob}">
+    const escapedPath = locMap[e.sessionId];
+    const cardLink = escapedPath
+      ? `<a class="card-link" href="/session/${encodeURIComponent(escapedPath)}/${encodeURIComponent(e.sessionId)}" target="_blank" rel="noopener" aria-label="打开会话 ${title}"></a>`
+      : '';
+    return `<div class="sf-card${escapedPath ? ' clickable' : ''}" data-blob="${blob}">
+      ${cardLink}
       <div class="sf-main">
         <div class="sf-title">${title}</div>
         ${summary ? `<div class="sf-summary">${summary}</div>` : ''}
@@ -73,8 +78,8 @@ export function renderSessionCards(entries) {
 }
 
 export async function renderSessions() {
-  const entries = await readSessionIndex();
-  return await layout('Session Finder', renderSessionCards(entries), {
+  const [entries, locMap] = await Promise.all([readSessionIndex(), getSessionLocationMap()]);
+  return await layout('Session Finder', renderSessionCards(entries, locMap), {
     isSessions: true,
     breadcrumbs: [{ label: 'Home', href: '/' }, { label: 'Session Finder' }],
   });

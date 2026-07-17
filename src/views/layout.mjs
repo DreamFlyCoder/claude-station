@@ -1114,7 +1114,14 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       border-radius: 10px;
     }
     .sf-meta { font-size: 0.75rem; color: var(--fg-faint); }
-    .sf-actions { flex-shrink: 0; }
+    .sf-actions { flex-shrink: 0; position: relative; z-index: 1; }
+    /* Clickable card: stretched link opens the session viewer; actions stay on top */
+    .sf-card { position: relative; }
+    .sf-card.clickable { cursor: pointer; }
+    .sf-card .card-link { position: absolute; inset: 0; z-index: 0; border-radius: inherit; text-decoration: none; }
+    .sf-card.clickable .sf-main { position: relative; pointer-events: none; }
+    .sf-card.clickable .sf-title { text-decoration: underline; text-decoration-color: transparent; transition: text-decoration-color 150ms; }
+    .sf-card.clickable:hover .sf-title { text-decoration-color: currentColor; }
 
     /* ===== Search results ===== */
     .search-result {
