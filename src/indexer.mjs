@@ -110,7 +110,7 @@ export async function runBackfill({ cap = 40, onProgress = () => {}, summarize =
   }
   if (items.length === 0) {
     const total = (await readSessionIndex(ip)).length;
-    return { added: 0, total, cost: 0 };
+    return { added: 0, total, cost: 0, errors: 0 };
   }
   const batches = [];
   let cur = [], curChars = 0;
@@ -123,10 +123,20 @@ export async function runBackfill({ cap = 40, onProgress = () => {}, summarize =
   if (cur.length) batches.push(cur);
 
   const byIdx = new Map(items.map(it => [it.idx, it]));
-  let done = 0, cost = 0, added = 0;
+  let done = 0, cost = 0, added = 0, errors = 0;
   onProgress({ done, total: items.length });
   for (const batch of batches) {
-    const { summaries, cost: c } = await summarize(batch.map(it => ({ idx: it.idx, text: it.text })));
+    let batchOut;
+    try {
+      batchOut = await summarize(batch.map(it => ({ idx: it.idx, text: it.text })));
+    } catch (e) {
+      if (e && e.code === 'ENOENT') throw e; // claude 缺失 → 整个任务失败，交由上层标记 claudeMissing
+      errors += 1;
+      done += batch.length;
+      onProgress({ done, total: items.length });
+      continue;
+    }
+    const { summaries, cost: c } = batchOut;
     cost += c || 0;
     const entries = [];
     for (const s of summaries) {
@@ -139,7 +149,7 @@ export async function runBackfill({ cap = 40, onProgress = () => {}, summarize =
     onProgress({ done, total: items.length });
   }
   const total = (await readSessionIndex(ip)).length;
-  return { added, total, cost };
+  return { added, total, cost, errors };
 }
 
 export async function merge(entries, indexPath = PATHS.SESSION_INDEX_FILE, now = new Date().toISOString()) {

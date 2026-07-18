@@ -85,6 +85,11 @@ describe('summarizeBatch', () => {
     const { summaries } = await summarizeBatch([{ idx: 0, text: 't' }], { runner: fakeRunner });
     assert.equal(summaries[0].title, 'A');
   });
+
+  it('propagates runner errors', async () => {
+    const boom = async () => { throw new Error('boom'); };
+    await assert.rejects(() => summarizeBatch([{ idx: 0, text: 't' }], { runner: boom }), /boom/);
+  });
 });
 
 describe('runBackfill', () => {
@@ -118,6 +123,18 @@ describe('runBackfill', () => {
     await mkdir(join(root, 'projects'), { recursive: true });
     const r = await runBackfill({ projectsDir: join(root, 'projects'), indexPath: join(root, 'index.json'), summarize: async () => ({ summaries: [], cost: 0 }) });
     assert.equal(r.added, 0);
+    await rm(root, { recursive: true, force: true });
+  });
+
+  it('skips a failing batch instead of aborting', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'bferr-'));
+    const projects = join(root, 'projects');
+    await mkdir(join(projects, '-proj'), { recursive: true });
+    await writeFile(join(projects, '-proj', 'ffffffff-1111-2222-3333-444444444444.jsonl'),
+      JSON.stringify({ type: 'user', cwd: '/w', timestamp: '2026-06-01T00:00:00Z', message: { role: 'user', content: '嗨' } }));
+    const r = await runBackfill({ projectsDir: projects, indexPath: join(root, 'index.json'), summarize: async () => { throw new Error('flaky'); } });
+    assert.equal(r.added, 0);
+    assert.ok(r.errors >= 1);
     await rm(root, { recursive: true, force: true });
   });
 });
