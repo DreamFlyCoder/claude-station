@@ -1,4 +1,4 @@
-import { readFile, readdir, stat, writeFile, rename } from 'node:fs/promises';
+import { readdir, stat, writeFile, rename } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { join, basename } from 'node:path';
