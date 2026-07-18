@@ -100,7 +100,7 @@ export function renderSessionCards(entries, locMap = {}) {
       }
       btn.addEventListener('click', function(){
         btn.disabled = true; statusEl.textContent = '启动中…';
-        fetch('/api/reindex', {method:'POST'}).then(function(r){return r.json();}).then(function(){ polling = true; poll(); });
+        fetch('/api/reindex', {method:'POST'}).then(function(r){return r.json();}).then(function(){ polling = true; poll(); }).catch(function(){ btn.disabled = false; statusEl.textContent = '启动失败，请重试'; });
       });
       // 页面加载时若已有任务在跑（启动触发的），直接接管显示
       fetch('/api/reindex/status').then(function(r){return r.json();}).then(function(s){ if(s.running){ polling = true; render(s); setTimeout(poll, 2000); } });
