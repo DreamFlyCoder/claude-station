@@ -1,9 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFile, mkdtemp, rm, mkdir } from 'node:fs/promises';
+import { writeFile, mkdtemp, rm, mkdir, readFile as rf } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { distill, findPending } from '../src/indexer.mjs';
+import { distill, findPending, merge } from '../src/indexer.mjs';
 
 async function tmpFile(name, lines) {
   const dir = await mkdtemp(join(tmpdir(), 'idx-'));
@@ -64,5 +64,32 @@ describe('findPending', () => {
     assert.equal((await findPending(projects, indexPath)).length, 1);
 
     await rm(root, { recursive: true, force: true });
+  });
+});
+
+describe('merge', () => {
+  const entry = (sid, extra = {}) => ({ sessionId: sid, cwd: '/p/a', title: 'T', summary: 's', topics: ['t'], startedAt: '2026-06-01T00:00:00Z', messageCount: 3, sourceMtime: 111, ...extra });
+
+  it('inserts, derives resume + indexedAt, atomic write', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'mrg-'));
+    const ip = join(dir, 'index.json');
+    const n = await merge([entry('s1')], ip, '2026-07-17T00:00:00Z');
+    assert.equal(n, 1);
+    const data = JSON.parse(await rf(ip, 'utf-8'));
+    assert.equal(data[0].resume, 'cd /p/a && claude --resume s1');
+    assert.equal(data[0].indexedAt, '2026-07-17T00:00:00Z');
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it('upserts same id, adds new id, shell-quotes cwd with spaces', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'mrg-'));
+    const ip = join(dir, 'index.json');
+    await merge([entry('s1', { title: 'old' })], ip, 't0');
+    await merge([entry('s1', { title: 'new' }), entry('s2', { cwd: '/Users/x/My Project' })], ip, 't1');
+    const data = JSON.parse(await rf(ip, 'utf-8'));
+    assert.equal(data.length, 2);
+    assert.equal(data.find(e => e.sessionId === 's1').title, 'new');
+    assert.equal(data.find(e => e.sessionId === 's2').resume, "cd '/Users/x/My Project' && claude --resume s2");
+    await rm(dir, { recursive: true, force: true });
   });
 });

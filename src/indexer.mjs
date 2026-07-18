@@ -61,3 +61,34 @@ export async function findPending(projectsDir = PATHS.PROJECTS_DIR, indexPath = 
   }
   return pending;
 }
+
+function shellQuote(s) {
+  if (s === '') return "''";
+  if (/^[A-Za-z0-9_/.@%+=:,-]+$/.test(s)) return s;
+  return "'" + s.replace(/'/g, `'\\''`) + "'";
+}
+
+export async function merge(entries, indexPath = PATHS.SESSION_INDEX_FILE, now = new Date().toISOString()) {
+  const existing = await readSessionIndex(indexPath);
+  const byId = new Map(existing.filter(e => e && e.sessionId).map(e => [e.sessionId, e]));
+  for (const e of entries) {
+    const cwd = e.cwd || '';
+    byId.set(e.sessionId, {
+      sessionId: e.sessionId,
+      cwd,
+      title: e.title || '',
+      summary: e.summary || '',
+      topics: Array.isArray(e.topics) ? e.topics : [],
+      startedAt: e.startedAt ?? null,
+      messageCount: e.messageCount ?? 0,
+      sourceMtime: e.sourceMtime ?? null,
+      indexedAt: now,
+      resume: `cd ${shellQuote(cwd)} && claude --resume ${e.sessionId}`,
+    });
+  }
+  const merged = [...byId.values()];
+  const tmp = indexPath + '.tmp';
+  await writeFile(tmp, JSON.stringify(merged, null, 2), 'utf-8');
+  await rename(tmp, indexPath);
+  return merged.length;
+}
