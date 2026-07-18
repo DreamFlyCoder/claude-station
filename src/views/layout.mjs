@@ -1070,6 +1070,15 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
     }
 
     /* ===== Session Finder page ===== */
+    .sf-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .sf-reindex-btn {
+      background: var(--bg-card); border: 1px solid var(--border); color: var(--fg);
+      padding: 8px 14px; border-radius: 8px; font-family: inherit; font-size: 0.85rem;
+      cursor: pointer; transition: all 200ms cubic-bezier(0.4,0,0.2,1);
+    }
+    .sf-reindex-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .sf-reindex-btn:disabled { opacity: 0.55; cursor: default; }
+    .sf-reindex-status { font-size: 0.8rem; color: var(--fg-dim); }
     .sf-filter {
       width: 100%;
       background: var(--bg-input);

@@ -14,9 +14,44 @@ function formatDate(ts) {
 }
 
 export function renderSessionCards(entries, locMap = {}) {
+  const toolbar = `<div class="sf-toolbar">
+      <button id="sf-reindex" class="sf-reindex-btn" type="button">🔄 刷新 session 索引</button>
+      <span id="sf-reindex-status" class="sf-reindex-status"></span>
+    </div>`;
+
+  const pollingScript = `<script>
+    (function(){
+      var btn = document.getElementById('sf-reindex');
+      var statusEl = document.getElementById('sf-reindex-status');
+      if(!btn || !statusEl) return;
+      var polling = false;
+      function render(s){
+        if(s.claudeMissing){ statusEl.textContent = '需要本机安装并登录 Claude Code 才能刷新'; btn.disabled = false; return; }
+        if(s.error){ statusEl.textContent = '出错：' + s.error; btn.disabled = false; return; }
+        if(s.running){ btn.disabled = true; statusEl.textContent = '索引中 ' + s.done + '/' + s.total + '…'; }
+        else { btn.disabled = false; }
+      }
+      function poll(){
+        fetch('/api/reindex/status').then(function(r){return r.json();}).then(function(s){
+          render(s);
+          if(s.running){ setTimeout(poll, 2000); }
+          else if(polling){ polling = false; if(s.added>0){ location.reload(); } else { statusEl.textContent = s.finishedAt ? ('已是最新' + (s.cost? '（$'+s.cost.toFixed(3)+'）':'')) : ''; } }
+        }).catch(function(){ statusEl.textContent=''; });
+      }
+      btn.addEventListener('click', function(){
+        btn.disabled = true; statusEl.textContent = '启动中…';
+        fetch('/api/reindex', {method:'POST'}).then(function(r){return r.json();}).then(function(){ polling = true; poll(); }).catch(function(){ btn.disabled = false; statusEl.textContent = '启动失败，请重试'; });
+      });
+      // 页面加载时若已有任务在跑（启动触发的），直接接管显示
+      fetch('/api/reindex/status').then(function(r){return r.json();}).then(function(s){ if(s.running){ polling = true; render(s); setTimeout(poll, 2000); } });
+    })();
+    </script>`;
+
   if (!entries || entries.length === 0) {
     return `<h2 style="color:var(--accent); margin-bottom:8px; font-size:1.1rem;">Session Finder</h2>
-      <p style="color:var(--fg-dim);">还没建索引。在 Claude Code 里说「更新会话索引」先跑一次 backfill（session-finder skill），再回来刷新本页。</p>`;
+    ${toolbar}
+    <p style="color:var(--fg-dim);">还没建索引。点上方「🔄 刷新 session 索引」建立索引；或在 Claude Code 里用 session-finder skill。</p>
+    ${pollingScript}`;
   }
 
   const sorted = [...entries].sort(
@@ -53,6 +88,7 @@ export function renderSessionCards(entries, locMap = {}) {
   }).join('');
 
   return `<h2 style="color:var(--accent); margin-bottom:8px; font-size:1.1rem;">Session Finder <span id="sf-count" style="color:var(--fg-dim);font-size:0.85rem;font-weight:400;">(${sorted.length})</span></h2>
+    ${toolbar}
     <p style="color:var(--fg-dim); font-size:0.85rem; margin-bottom:12px;">在会话摘要/主题词上关键词即时过滤。想按语义描述找回，请在 Claude Code 里用 session-finder skill。</p>
     <input id="sf-filter" class="sf-filter" type="search" placeholder="🔍 输入关键词即时过滤标题/摘要/主题词..." aria-label="Filter sessions" />
     <div id="sf-list">${cards}</div>
@@ -74,7 +110,8 @@ export function renderSessionCards(entries, locMap = {}) {
         if(count) count.textContent = '(' + n + ')';
       });
     })();
-    </script>`;
+    </script>
+    ${pollingScript}`;
 }
 
 export async function renderSessions() {

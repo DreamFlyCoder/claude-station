@@ -7,6 +7,7 @@ import { renderSearch } from './views/search.mjs';
 import { renderConfig } from './views/config.mjs';
 import { renderArchive } from './views/archive.mjs';
 import { renderSessions } from './views/sessions.mjs';
+import { startReindex, getStatus } from './reindex-job.mjs';
 import {
   getSessionMessages, getRealPath,
   archiveSession, saveClaudeMd,
@@ -113,6 +114,16 @@ export function startServer(port, callback) {
       if (method === 'GET' && path === '/sessions') {
         const html = await renderSessions();
         return sendHtml(res, html);
+      }
+
+      // POST /api/reindex — 触发一次增量索引（单飞）
+      if (method === 'POST' && path === '/api/reindex') {
+        return sendJson(res, startReindex());
+      }
+
+      // GET /api/reindex/status — 索引任务状态
+      if (method === 'GET' && path === '/api/reindex/status') {
+        return sendJson(res, getStatus());
       }
 
       // POST /api/session/archive/:escapedPath/:id/restore
