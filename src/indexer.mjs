@@ -68,6 +68,80 @@ function shellQuote(s) {
   return "'" + s.replace(/'/g, `'\\''`) + "'";
 }
 
+const MAX_N = 15, MAX_CHARS = 80000, SOLO = 80000;
+
+const SUMMARY_INSTRUCTION = `你在为会话检索索引生成摘要。输入是若干条 {idx, text}（text 是蒸馏后的对话，含 [USER]/[ASSISTANT] 标记）。
+对每条输出一个对象：{"idx":<原样整数>,"title":"简短中文标题","summary":"3-5句中文，描述会话演进弧线：先→接着→再→最后，抓用户意图推进，不只写开头","topics":["主题词",...]}。
+idx 必须原样回传，不要编造或改动任何 id。只输出一个 JSON 数组，不要 markdown 代码围栏、不要多余文字。`;
+
+function defaultRunner(prompt) {
+  return new Promise((resolve, reject) => {
+    const cp = spawn('claude', ['-p', prompt, '--output-format', 'json', '--permission-mode', 'bypassPermissions', '--allowedTools', ''], { stdio: ['ignore', 'pipe', 'pipe'] });
+    let out = '', err = '';
+    cp.stdout.on('data', d => (out += d));
+    cp.stderr.on('data', d => (err += d));
+    cp.on('error', e => reject(Object.assign(new Error('claude spawn failed: ' + e.message), { code: e.code })));
+    cp.on('close', code => code === 0 ? resolve(out) : reject(new Error('claude exited ' + code + ': ' + err.slice(0, 300))));
+  });
+}
+
+export async function summarizeBatch(items, { runner = defaultRunner } = {}) {
+  const prompt = SUMMARY_INSTRUCTION + '\n\n输入：\n' + JSON.stringify(items.map(i => ({ idx: i.idx, text: i.text })));
+  const raw = await runner(prompt);
+  let outer;
+  try { outer = JSON.parse(raw); } catch { throw new Error('claude output not JSON'); }
+  if (outer.is_error) throw new Error('claude error: ' + String(outer.result || '').slice(0, 200));
+  let text = String(outer.result || '').trim();
+  const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fence) text = fence[1].trim();
+  const arr = JSON.parse(text);
+  if (!Array.isArray(arr)) throw new Error('summary result not an array');
+  return { summaries: arr, cost: outer.total_cost_usd || 0 };
+}
+
+export async function runBackfill({ cap = 40, onProgress = () => {}, summarize = summarizeBatch, projectsDir, indexPath } = {}) {
+  const pd = projectsDir || PATHS.PROJECTS_DIR;
+  const ip = indexPath || PATHS.SESSION_INDEX_FILE;
+  const pending = (await findPending(pd, ip)).slice(0, cap);
+  const items = [];
+  for (const p of pending) {
+    const d = await distill(p.path);
+    if (d) items.push({ ...d, idx: items.length });
+  }
+  if (items.length === 0) {
+    const total = (await readSessionIndex(ip)).length;
+    return { added: 0, total, cost: 0 };
+  }
+  const batches = [];
+  let cur = [], curChars = 0;
+  for (const it of items) {
+    const tl = it.text.length;
+    if (tl > SOLO) { if (cur.length) { batches.push(cur); cur = []; curChars = 0; } batches.push([it]); continue; }
+    if (cur.length && (cur.length >= MAX_N || curChars + tl > MAX_CHARS)) { batches.push(cur); cur = []; curChars = 0; }
+    cur.push(it); curChars += tl;
+  }
+  if (cur.length) batches.push(cur);
+
+  const byIdx = new Map(items.map(it => [it.idx, it]));
+  let done = 0, cost = 0, added = 0;
+  onProgress({ done, total: items.length });
+  for (const batch of batches) {
+    const { summaries, cost: c } = await summarize(batch.map(it => ({ idx: it.idx, text: it.text })));
+    cost += c || 0;
+    const entries = [];
+    for (const s of summaries) {
+      const it = byIdx.get(s.idx);
+      if (!it) continue;
+      entries.push({ sessionId: it.sessionId, cwd: it.cwd, title: s.title, summary: s.summary, topics: s.topics, startedAt: it.startedAt, messageCount: it.messageCount, sourceMtime: it.sourceMtime });
+    }
+    if (entries.length) { await merge(entries, ip); added += entries.length; }
+    done += batch.length;
+    onProgress({ done, total: items.length });
+  }
+  const total = (await readSessionIndex(ip)).length;
+  return { added, total, cost };
+}
+
 export async function merge(entries, indexPath = PATHS.SESSION_INDEX_FILE, now = new Date().toISOString()) {
   const existing = await readSessionIndex(indexPath);
   const byId = new Map(existing.filter(e => e && e.sessionId).map(e => [e.sessionId, e]));

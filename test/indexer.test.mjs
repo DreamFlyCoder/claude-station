@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { writeFile, mkdtemp, rm, mkdir, readFile as rf } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { distill, findPending, merge } from '../src/indexer.mjs';
+import { distill, findPending, merge, summarizeBatch, runBackfill } from '../src/indexer.mjs';
 
 async function tmpFile(name, lines) {
   const dir = await mkdtemp(join(tmpdir(), 'idx-'));
@@ -63,6 +63,61 @@ describe('findPending', () => {
     await writeFile(indexPath, JSON.stringify([{ sessionId: 'realsess', sourceMtime: 1 }]));
     assert.equal((await findPending(projects, indexPath)).length, 1);
 
+    await rm(root, { recursive: true, force: true });
+  });
+});
+
+describe('summarizeBatch', () => {
+  it('parses claude json result into summaries + cost, honoring idx', async () => {
+    const fakeRunner = async () => JSON.stringify({
+      is_error: false, total_cost_usd: 0.12,
+      result: JSON.stringify([{ idx: 0, title: 'A', summary: 'sa', topics: ['x'] }, { idx: 1, title: 'B', summary: 'sb', topics: [] }]),
+    });
+    const { summaries, cost } = await summarizeBatch([{ idx: 0, text: 't0' }, { idx: 1, text: 't1' }], { runner: fakeRunner });
+    assert.equal(summaries.length, 2);
+    assert.equal(summaries[0].idx, 0);
+    assert.equal(summaries[1].title, 'B');
+    assert.equal(cost, 0.12);
+  });
+
+  it('strips markdown fences in result', async () => {
+    const fakeRunner = async () => JSON.stringify({ is_error: false, total_cost_usd: 0, result: '```json\n[{"idx":0,"title":"A","summary":"s","topics":[]}]\n```' });
+    const { summaries } = await summarizeBatch([{ idx: 0, text: 't' }], { runner: fakeRunner });
+    assert.equal(summaries[0].title, 'A');
+  });
+});
+
+describe('runBackfill', () => {
+  it('distills pending, summarizes via injected fn, merges with correct identity', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'bf-'));
+    const projects = join(root, 'projects');
+    await mkdir(join(projects, '-proj'), { recursive: true });
+    const sid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+    await writeFile(join(projects, '-proj', sid + '.jsonl'),
+      JSON.stringify({ type: 'user', cwd: '/w/proj', timestamp: '2026-06-01T00:00:00Z', message: { role: 'user', content: '先做 A 再做 B' } }));
+    const ip = join(root, 'index.json');
+
+    const fakeSummarize = async (items) => ({
+      summaries: items.map(it => ({ idx: it.idx, title: '标题', summary: '先 A→再 B', topics: ['a', 'b'] })),
+      cost: 0.01,
+    });
+    const progress = [];
+    const r = await runBackfill({ projectsDir: projects, indexPath: ip, summarize: fakeSummarize, onProgress: p => progress.push(p) });
+    assert.equal(r.added, 1);
+    const data = JSON.parse(await rf(ip, 'utf-8'));
+    assert.equal(data[0].sessionId, sid);          // 身份=文件名，来自 station 不是模型
+    assert.equal(data[0].cwd, '/w/proj');
+    assert.equal(data[0].title, '标题');
+    assert.equal(data[0].resume, `cd /w/proj && claude --resume ${sid}`);
+    assert.ok(progress.length >= 1);
+    await rm(root, { recursive: true, force: true });
+  });
+
+  it('returns added:0 when nothing pending', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'bf0-'));
+    await mkdir(join(root, 'projects'), { recursive: true });
+    const r = await runBackfill({ projectsDir: join(root, 'projects'), indexPath: join(root, 'index.json'), summarize: async () => ({ summaries: [], cost: 0 }) });
+    assert.equal(r.added, 0);
     await rm(root, { recursive: true, force: true });
   });
 });
