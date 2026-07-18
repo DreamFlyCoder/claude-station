@@ -1,9 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFile, mkdtemp, rm } from 'node:fs/promises';
+import { writeFile, mkdtemp, rm, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { distill } from '../src/indexer.mjs';
+import { distill, findPending } from '../src/indexer.mjs';
 
 async function tmpFile(name, lines) {
   const dir = await mkdtemp(join(tmpdir(), 'idx-'));
@@ -36,5 +36,33 @@ describe('distill', () => {
     const { dir, p } = await tmpFile('empty.jsonl', [JSON.stringify({ type: 'attachment', attachment: { data: 'x' } })]);
     assert.equal(await distill(p), null);
     await rm(dir, { recursive: true, force: true });
+  });
+});
+
+describe('findPending', () => {
+  it('diffs by sessionId+mtime, skips agent-* and .archive', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pend-'));
+    const projects = join(root, 'projects');
+    await mkdir(join(projects, '-proj-a'), { recursive: true });
+    await mkdir(join(projects, '.archive'), { recursive: true });
+    await writeFile(join(projects, '-proj-a', 'realsess.jsonl'), '{}');
+    await writeFile(join(projects, '-proj-a', 'agent-xyz.jsonl'), '{}');
+    await writeFile(join(projects, '.archive', 'old.jsonl'), '{}');
+    const indexPath = join(root, 'index.json');
+
+    // 无索引 → realsess 待办，agent-* 与 .archive 跳过
+    let pend = await findPending(projects, indexPath);
+    assert.deepEqual(pend.map(p => p.sessionId).sort(), ['realsess']);
+
+    // 索引里已含 realsess 且 mtime 一致 → 无待办
+    const mt = pend[0].sourceMtime;
+    await writeFile(indexPath, JSON.stringify([{ sessionId: 'realsess', sourceMtime: mt }]));
+    assert.deepEqual(await findPending(projects, indexPath), []);
+
+    // mtime 不一致 → 又待办
+    await writeFile(indexPath, JSON.stringify([{ sessionId: 'realsess', sourceMtime: 1 }]));
+    assert.equal((await findPending(projects, indexPath)).length, 1);
+
+    await rm(root, { recursive: true, force: true });
   });
 });

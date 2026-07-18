@@ -37,3 +37,27 @@ export async function distill(path) {
   try { sourceMtime = Math.floor((await stat(path)).mtimeMs / 1000); } catch { /* keep 0 */ }
   return { sessionId, cwd, startedAt, messageCount, sourceMtime, text };
 }
+
+export async function findPending(projectsDir = PATHS.PROJECTS_DIR, indexPath = PATHS.SESSION_INDEX_FILE) {
+  const index = await readSessionIndex(indexPath);
+  const byId = new Map(index.filter(e => e && e.sessionId).map(e => [e.sessionId, e]));
+  const pending = [];
+  let dirents;
+  try { dirents = await readdir(projectsDir, { withFileTypes: true }); } catch { return []; }
+  for (const de of dirents) {
+    if (!de.isDirectory() || de.name === '.archive') continue;
+    let files;
+    try { files = await readdir(join(projectsDir, de.name)); } catch { continue; }
+    for (const f of files) {
+      if (!f.endsWith('.jsonl') || f.startsWith('agent-')) continue;
+      const path = join(projectsDir, de.name, f);
+      const sessionId = basename(f, '.jsonl');
+      let sourceMtime;
+      try { sourceMtime = Math.floor((await stat(path)).mtimeMs / 1000); } catch { continue; }
+      const prev = byId.get(sessionId);
+      if (prev && prev.sourceMtime === sourceMtime) continue;
+      pending.push({ sessionId, path, sourceMtime });
+    }
+  }
+  return pending;
+}
