@@ -61,7 +61,7 @@ describe('renderSessionCards', () => {
 
   it('renders empty-state message for empty array', () => {
     const html = renderSessionCards([]);
-    assert.match(html, /刷新 session 索引/);
+    assert.match(html, /Refresh session index/);
     assert.match(html, /sf-reindex/);
     assert.doesNotMatch(html, /sf-card/);
   });

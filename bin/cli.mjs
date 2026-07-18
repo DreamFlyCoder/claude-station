@@ -10,10 +10,10 @@ startServer(PORT, (actualPort) => {
   const url = `http://localhost:${actualPort}`;
   console.log(`claude-station running at ${url}`);
 
-  // 启动触发：待索引 >3 条才自动跑一次（可见，不阻塞）
+  // Startup trigger: auto-refresh once only when >3 sessions are pending (visible, non-blocking).
   findPending().then(pending => {
     if (pending.length > 3) {
-      console.log(`[session-index] ${pending.length} 条待索引，开始后台刷新…（浏览 /sessions 看进度）`);
+      console.log(`[session-index] ${pending.length} sessions pending, refreshing in background… (open /sessions for progress)`);
       startReindex();
     }
   }).catch(() => {});

@@ -1079,6 +1079,7 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
     .sf-reindex-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
     .sf-reindex-btn:disabled { opacity: 0.55; cursor: default; }
     .sf-reindex-status { font-size: 0.8rem; color: var(--fg-dim); }
+    .sf-last-indexed { font-size: 0.78rem; color: var(--fg-faint); margin-left: auto; }
     .sf-filter {
       width: 100%;
       background: var(--bg-input);
@@ -1361,6 +1362,7 @@ export async function layout(title, content, { breadcrumbs = [], activeEscapedPa
       <div class="topbar">
         <h1><a href="/">Claude Station</a></h1>
         <div class="topbar-actions">
+          <a class="home-btn" href="/sessions" title="Session Finder" aria-label="Session Finder"><span class="icon">🔎</span></a>
           <a class="home-btn" href="/" title="Home" aria-label="Home"><span class="icon">🏠</span></a>
           <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme"><span class="icon">🌙</span></button>
         </div>
