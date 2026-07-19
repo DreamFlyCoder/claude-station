@@ -70,9 +70,10 @@ function shellQuote(s) {
 
 const MAX_N = 15, MAX_CHARS = 80000, SOLO = 80000;
 
-const SUMMARY_INSTRUCTION = `你在为会话检索索引生成摘要。输入是若干条 {idx, text}（text 是蒸馏后的对话，含 [USER]/[ASSISTANT] 标记）。
-对每条输出一个对象：{"idx":<原样整数>,"title":"简短中文标题","summary":"3-5句中文，描述会话演进弧线：先→接着→再→最后，抓用户意图推进，不只写开头","topics":["主题词",...]}。
-idx 必须原样回传，不要编造或改动任何 id。只输出一个 JSON 数组，不要 markdown 代码围栏、不要多余文字。`;
+const SUMMARY_INSTRUCTION = `You generate index summaries for session search. Input is a list of {idx, text} where text is a distilled conversation (with [USER]/[ASSISTANT] markers).
+For EACH item output an object: {"idx":<same integer>,"title":"short title","summary":"3-5 sentences describing the conversation's arc: first → then → next → finally, capturing how the user's intent progressed, not just the opening","topics":["topic",...]}.
+Write title, summary, and topics in the SAME primary language as that conversation's text (e.g. a Chinese conversation → Chinese; an English conversation → English). Judge per item from its own text; do not translate.
+idx must be echoed back unchanged — never invent or alter any id. Output only a JSON array, no markdown code fences, no extra text.`;
 
 function defaultRunner(prompt) {
   return new Promise((resolve, reject) => {
@@ -86,7 +87,7 @@ function defaultRunner(prompt) {
 }
 
 export async function summarizeBatch(items, { runner = defaultRunner } = {}) {
-  const prompt = SUMMARY_INSTRUCTION + '\n\n输入：\n' + JSON.stringify(items.map(i => ({ idx: i.idx, text: i.text })));
+  const prompt = SUMMARY_INSTRUCTION + '\n\nInput:\n' + JSON.stringify(items.map(i => ({ idx: i.idx, text: i.text })));
   const raw = await runner(prompt);
   let outer;
   try { outer = JSON.parse(raw); } catch { throw new Error('claude output not JSON'); }
